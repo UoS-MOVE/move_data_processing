@@ -23,10 +23,14 @@ import pyodbc
 JSON_NAME = 'monnit_' + str(datetime.datetime.now()) + '.json'
 
 #SQL Server connection info
-SERVER = 'salsql.bellmer.me'
-DATABASE = 'salfordMove'
-UNAME = 'salMOVE'
-PWD ='salMOVE-2020'
+with open(".dbCreds") as f:
+	dbCreds = json.load(f)
+
+
+SERVER = dbCreds['SERVER']
+DATABASE = dbCreds['DATABASE']
+UNAME = dbCreds['UNAME']
+PWD = dbCreds['PWD']
 
 # Formatted connection string for the SQL DB.
 SQL_CONN_STR = 'Driver={ODBC Driver 17 for SQL Server};Server='+SERVER+';Database='+DATABASE+';Trusted_Connection=no;UID='+UNAME+';PWD='+PWD+';'
@@ -103,7 +107,7 @@ def webhook():
 
 					# Close cursor and database connection
 					cursor.close()
-					await conn.close()
+					conn.close()
 					# Print error is one should occur and raise an exception
 					#print("Error: " + str(e) + ". An error ocurred inserting gateway data to database.")
 					raise("An error occurred inserting gateway data to database: " + sqlstate)
@@ -146,7 +150,7 @@ def webhook():
 
 					# Close cursor and database connection
 					cursor.close()
-					await conn.close()
+					conn.close()
 					# Print error is one should occur and raise an exception
 					#print("Error: " + str(e) + ". An error ocurred inserting gateway data to database.")
 					raise("An error occurred inserting sensor data to database: " + sqlstate)
