@@ -27,13 +27,12 @@ with open(".dbCreds") as f:
 	dbCreds = json.load(f)
 
 
-SERVER = dbCreds['SERVER']
 DATABASE = dbCreds['DATABASE']
 UNAME = dbCreds['UNAME']
 PWD = dbCreds['PWD']
 
 # Formatted connection string for the SQL DB.
-SQL_CONN_STR = 'Driver={ODBC Driver 17 for SQL Server};Server='+SERVER+';Database='+DATABASE+';Trusted_Connection=no;UID='+UNAME+';PWD='+PWD+';'
+SQL_CONN_STR = 'DSN=Salford-SQL-Server;Database='+DATABASE+';Trusted_Connection=no;UID='+UNAME+';PWD='+PWD+';'
 
 # Flask web server
 app = Flask(__name__)
