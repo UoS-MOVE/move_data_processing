@@ -55,7 +55,9 @@ def webhook():
 			cursor = conn.cursor()
 		except pyodbc.Error as e:
 			# Print error is one should occur
-			print("Error: " + str(e))
+			sqlstate = e.args[1]
+			print("An error occurred connecting to the database: " + sqlstate)
+			abort(500)
 		else:
 			print('Successfully connected to database')
 
@@ -103,20 +105,19 @@ def webhook():
 
 				except pyodbc.Error as e:
 					sqlstate = e.args[1]
-					#print(sqlstate)
-
+					
 					# Close cursor and database connection
 					cursor.close()
 					conn.close()
 					# Print error is one should occur and raise an exception
-					#print("Error: " + str(e) + ". An error ocurred inserting gateway data to database.")
-					raise("An error occurred inserting gateway data to database: " + sqlstate)
+					print("An error occurred inserting gateway data to database: " + sqlstate)
+					abort(500)
 
 			# Push sensor data to the database
 			for i, x in sensorMessages.iterrows():
 				print("Pushing sensor message " + str(i) + " to the database.")
 				dbTable = "dbo.sensorData"
-				columns = "(sensorID, sensorName, applicationID, networkID, dataMessageGUID, sensorState, messageDate, rawData, dataType, dataValue, plotValues, plotLabels, batteryLevel, signalStrength, pendingChange, sensorVoltage)"
+				columns = "(sensorID, sensorName, applicationID, networkID, dataMessageGUID, sensorState, messageDate, rawData, dataType, dataValue, plotValues, plotLabels, batteryLevel, signalStrength, pendingChange, voltage)"
 
 				sensorID = x['sensorID']
 				sensorName = x['sensorName']
@@ -146,36 +147,35 @@ def webhook():
 					conn.commit()
 				except pyodbc.Error as e:
 					sqlstate = e.args[1]
-					#print(sqlstate)
-
+					
 					# Close cursor and database connection
 					cursor.close()
 					conn.close()
 					# Print error is one should occur and raise an exception
-					#print("Error: " + str(e) + ". An error ocurred inserting gateway data to database.")
-					raise("An error occurred inserting sensor data to database: " + sqlstate)
+					print("An error occurred inserting sensor data to database: " + sqlstate)
+					abort(500)
 
 			# Close cursor and database connection
 			cursor.close()
 			conn.close()
 
 
-			# Store sensor data into a CSV file
-			if os.path.exists('sensorCSV.csv'):
-				with open('sensorCSV.csv', 'a') as fd:
-					sensorMessages.to_csv(fd, header=False, index=False)
-			else:
-				sensorMessages.to_csv('sensorCSV.csv', index=False)
+		# Store sensor data into a CSV file
+		if os.path.exists('sensorCSV.csv'):
+			with open('sensorCSV.csv', 'a') as fd:
+				sensorMessages.to_csv(fd, header=False, index=False)
+		else:
+			sensorMessages.to_csv('sensorCSV.csv', index=False)
 
-			# Store gateway data into a CSV file
-			if os.path.exists('gatewayCSV.csv'):
-				with open('gatewayCSV.csv', 'a') as fd:
-					gatewayMessages.to_csv(fd, header=False, index=False)
-			else:
-				gatewayMessages.to_csv('gatewayCSV.csv', index=False)
+		# Store gateway data into a CSV file
+		if os.path.exists('gatewayCSV.csv'):
+			with open('gatewayCSV.csv', 'a') as fd:
+				gatewayMessages.to_csv(fd, header=False, index=False)
+		else:
+			gatewayMessages.to_csv('gatewayCSV.csv', index=False)
 
-			# Return status 200 (success) to the remote client
-			return '', 200
+		# Return status 200 (success) to the remote client
+		return '', 200
 
 
 	elif request.method == 'POST' and request.headers['uname'] != 'salford' and request.headers['pwd'] != 'pwd':
