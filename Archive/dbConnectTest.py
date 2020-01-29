@@ -1,10 +1,10 @@
 import pyodbc
 
 
-SERVER = 'salsql.bellmer.me'
-DATABASE = 'salfordMove'
-UNAME = 'salMOVE'
-PWD ='salMOVE-2020'
+SERVER = 'HOSTNAME'
+DATABASE = 'DB'
+UNAME = 'USR'
+PWD ='PWD'
 
 SQL_CONN_STR = 'Driver={ODBC Driver 17 for SQL Server};Server='+SERVER+';Database='+DATABASE+';Trusted_Connection=no;UID='+UNAME+';PWD='+PWD+';'
 
