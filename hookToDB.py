@@ -105,7 +105,7 @@ def webhook():
 
 				except pyodbc.Error as e:
 					sqlstate = e.args[1]
-					
+
 					# Close cursor and database connection
 					cursor.close()
 					conn.close()
@@ -147,7 +147,7 @@ def webhook():
 					conn.commit()
 				except pyodbc.Error as e:
 					sqlstate = e.args[1]
-					
+
 					# Close cursor and database connection
 					cursor.close()
 					conn.close()
