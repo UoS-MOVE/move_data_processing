@@ -21,6 +21,8 @@ import pyodbc
 
 # Variable declarations
 JSON_NAME = 'monnit_' + str(datetime.datetime.now()) + '.json'
+CSV_DIR = os.getcwd() + '/data/csv/'
+JSON_DIR = os.getcwd() + '/data/json/'
 
 #SQL Server connection info
 with open(".dbCreds") as f:
@@ -62,8 +64,7 @@ def webhook():
 
 			#Store the recieved JSON file from the request 
 			jsonLoad = request.json
-
-			with open(JSON_NAME, 'w') as f:
+			with open(JSON_DIR + JSON_NAME, 'w') as f:
 				json.dump(jsonLoad, f)
 
 			# Load gateway and sensor message data form JSON into separate variables
@@ -160,18 +161,18 @@ def webhook():
 
 
 		# Store sensor data into a CSV file
-		if os.path.exists('sensorCSV.csv'):
-			with open('sensorCSV.csv', 'a') as fd:
+		if os.path.exists(CSV_DIR + 'sensorCSV.csv'):
+			with open(CSV_DIR + 'sensorCSV.csv', 'a') as fd:
 				sensorMessages.to_csv(fd, header=False, index=False)
 		else:
-			sensorMessages.to_csv('sensorCSV.csv', index=False)
+			sensorMessages.to_csv(CSV_DIR + 'sensorCSV.csv', index=False)
 
 		# Store gateway data into a CSV file
-		if os.path.exists('gatewayCSV.csv'):
-			with open('gatewayCSV.csv', 'a') as fd:
+		if os.path.exists(CSV_DIR + 'gatewayCSV.csv'):
+			with open(CSV_DIR + 'gatewayCSV.csv', 'a') as fd:
 				gatewayMessages.to_csv(fd, header=False, index=False)
 		else:
-			gatewayMessages.to_csv('gatewayCSV.csv', index=False)
+			gatewayMessages.to_csv(CSV_DIR + 'gatewayCSV.csv', index=False)
 
 		# Return status 200 (success) to the remote client
 		return '', 200
