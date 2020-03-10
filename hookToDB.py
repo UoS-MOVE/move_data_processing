@@ -5,6 +5,9 @@
 # Date: 16/01/2020
 # Version: 0.3
 
+# Venv activation is blocked by default because the process isn't singed, so run this first:
+# Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope Process
+
 # Import libraries
 import sys
 from flask import Flask, request, abort
