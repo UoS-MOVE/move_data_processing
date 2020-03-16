@@ -1,7 +1,8 @@
 /* Create tables for the processed data */
+/* DO NOT USE - This file creates an inappropriate table structure based on flawed normalisation, keep for future reference only */
 
 CREATE TABLE salfordMOVE.dbo.UNIT_DATA(
-	unitID INT NOT NULL UNIQUE,
+	unitID INT NOT NULL,
 	unitName NVARCHAR(10) NOT NULL,
 	CONSTRAINT unit_pk PRIMARY KEY (unitID)
 );
