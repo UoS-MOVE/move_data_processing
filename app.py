@@ -1,6 +1,8 @@
-# Title: Monnit Webhook Parser
-# Description: Recieves the webhook from the Monnit servers 
-#              and stores the data into an SQL Server database
+# Title: Monnit Webhook Processor
+# Description: Receives the webhook from the Monnit servers 
+#              and stores the data into an SQL Server database,
+#			   as well as processing the data to separate 
+# 			   concatonated data from the received data.
 # Author: Ethan Bellmer
 # Date: 16/01/2020
 # Version: 1.0
@@ -77,6 +79,7 @@ def csvDump(fileName, struct):
 def pushGatewayData(conn, struct):
 	print('Push gateway data')
 
+	# Create a new cursor from the connection object
 	cursor = conn.cursor()
 
 	# Push gateway data to the database
@@ -120,6 +123,7 @@ def pushGatewayData(conn, struct):
 def pushSensorData(conn, struct):
 	print('Push sensor data')
 
+	# Create a new cursor from the connection object
 	cursor = conn.cursor()
 
 	# Push sensor data to the database
@@ -154,12 +158,13 @@ def pushSensorData(conn, struct):
 			cursor.execute("INSERT INTO " + dbTable + columns + " VALUES (" + str(sensorID) + ",'" + str(sensorName) + "'," + str(applicationID) + "," + str(networkID) + ",'" + str(dataMessageGUID) + "'," + str(sensorState) + ",'" + str(messageDate) + "','" + str(rawData) + "','" + str(dataType) + "','" + str(dataValue) + "','" + str(plotValues) + "','" + str(plotLabels) + "'," + str(batteryLevel) + "," + str(signalStrength) + ',' + str(pendingChange) + ',' + str(sensorVoltage) + ")")
 			#cursor.execute("INSERT INTO " + dbTable + columns + " values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", [sensorID, "'"sensorName"'", applicationID, networkID, "'"dataMessageGUID"'", sensorState, datetime.date(messageDate), "'"rawData"'", "'"dataType"'", "'"dataValue"'", "'"plotValues"'", "'"plotLabels"'", batteryLevel, signalStrength, pendingChange])
 			conn.commit()
+
 		except pyodbc.Error as e:
 			sqlstate = e.args[1]
 
 			# Close cursor and database connection
 			cursor.close()
-			conn.close()
+
 			# Print error is one should occur and raise an exception
 			print("An error occurred inserting sensor data to database: " + sqlstate)
 			abort(500)
@@ -167,58 +172,26 @@ def pushSensorData(conn, struct):
 	# Close cursor and database connection
 	cursor.close()
 
-def processTemp():
-	print('process temp')
 
-def processHumidity():
-	print('process Humidity')
 
-def processLight():
-	print('process Light')
-
-def processMotion():
-	print('process Motion')
-
-def processAirQuality():
-	print('process AirQuality')
-
-def processCO2():
-	print('process CO2')
-
-def processAirVelocity():
-	print('process AirVelocity')
 
 def webhook():
 	print("webhook"); sys.stdout.flush()
 	if request.method == 'POST' and request.headers['uname'] == 'salford' and request.headers['pwd'] == 'MOVE-2019':
 		print('Request Authenticated & JSON Recieved')
 
-		# Try to connect to the database
-		try:
-			print('Connecting to database...')
-			# Create a new connection to the SQL Server using the prepared connection string
-			conn = pyodbc.connect(SQL_CONN_STR)
-			cursor = conn.cursor()
-		except pyodbc.Error as e:
-			# Print error is one should occur
-			sqlstate = e.args[1]
-			print("An error occurred connecting to the database: " + sqlstate)
-			abort(500)
-		else:
-			print('Successfully connected to database')
-
-			#Store the recieved JSON file from the request 
-			jsonLoad = request.json
-			
-			# Dump JSON to file system
-			jsonDump(jsonLoad)
-			
-			# Load gateway and sensor message data form JSON into separate variables
-			gatewayMessages = jsonLoad['gatewayMessage']
-			sensorMessages = jsonLoad['sensorMessages']
-			# Convert the JSONs into pandas dataframes
-			gatewayMessages = json_normalize(gatewayMessages)
-			sensorMessages = json_normalize(sensorMessages)
+		#Store the recieved JSON file from the request 
+		jsonLoad = request.json
+		
+		# Dump JSON to file system
+		jsonDump(jsonLoad)
+		
+		# Load gateway and sensor message data form JSON into separate variables
+		gatewayMessages = jsonLoad['gatewayMessage']
+		sensorMessages = jsonLoad['sensorMessages']
+		# Convert the JSONs into pandas dataframes
+		gatewayMessages = json_normalize(gatewayMessages)
+		sensorMessages = json_normalize(sensorMessages)
 
 
 		# CONNECT TO DB HERE
@@ -229,12 +202,55 @@ def webhook():
 		pushSensorData(conn, sensorMessages)
 
 		# ADDITIONAL PROCESSING HERE
+		for i, x in sensorMessages.iterrows():
+			#print("Pushing sensor message " + str(i) + " to the database.")
+			dbTable = "dbo.sensorData"
+			columns = "(sensorID, sensorName, applicationID, networkID, dataMessageGUID, sensorState, messageDate, rawData, dataType, dataValue, plotValues, plotLabels, batteryLevel, signalStrength, pendingChange, voltage)"
+
+			sensorID = x['sensorID']
+			sensorName = x['sensorName']
+			applicationID = x['applicationID']
+			networkID = x['networkID']
+			dataMessageGUID = x['dataMessageGUID']
+			sensorState = x['state']
+			batteryLevel = x['batteryLevel']
+			signalStrength = x['signalStrength']
+
+			if x['pendingChange'] == 'False':
+				pendingChange = 0
+			else:
+				pendingChange = 1
+			sensorVoltage = x['voltage']
+
+		##############
+
+		# PUSH PROCESSED DATA TO DB
+		# Conditional selection depending on sensor data
+		
+
+		# Prepare everything using Stored Procedures and push data to them?
+		# Still need to organise the logic for iterating through the data structure 
+
+
+		#applications - Not necessary, data is static after initial creation
+		#networks - Not necessary, data is static after initial creation
+		#sensors
+		#data types
+		#readings
+		#signal status
+		#battery status
+		#pending changes
+		#sensor voltage
+
+		# Will always run
+		pushMiscSensorData()
 
 		# CLOSE DB CONNECTIONS HERE
 		conn.close()
-		cursor.close()
 
 		# CALL CSV DUMP HERE
+		csvDump('sensorData', sensorMessages)
+		csvDump('gatewayData',gatewayMessages)
 
 		# Return status 200 (success) to the remote client
 		return '', 200
