@@ -1,7 +1,7 @@
 /* Create tables for storing data related to users and athentication credentials */
 
 CREATE TABLE salfordMove.dbo.USERS(
-	userID GUID NOT NULL,
+	userID GUID DEFAULT NEWID() NOT NULL,
 	username NVARCHAR(20) NOT NULL,
 	forename NVARCHAR(20) NOT NULL,
 	surname NVARCHAR(50) NULL,
@@ -11,7 +11,7 @@ CREATE TABLE salfordMove.dbo.USERS(
 );
 
 CREATE TABLE salfordMove.dbo.ADMINS(
-	adminID GUID NOT NULL,
+	adminID GUID DEFAULT NEWID() NOT NULL,
 	userID GUID NOT NULL,
 	isAdmin BIT NOT NULL,
 	CONSTRAINT PK_ADMINS PRIMARY KEY (adminID),
@@ -22,7 +22,7 @@ CREATE TABLE salfordMove.dbo.ADMINS(
 );
 
 CREATE TABLE salfordMove.dbo.PASSWORDS(
-	passwordID GUID NOT NULL,
+	passwordID GUID DEFAULT NEWID() NOT NULL,
 	userID GUID NOT NULL,
 	userPassword NVARCHAR(MAX) NOT NULL,
 	salt NVARCHAR(MAX) NOT NULL,
@@ -34,7 +34,7 @@ CREATE TABLE salfordMove.dbo.PASSWORDS(
 );
 
 CREATE TABLE salfordMove.dbo.USER_PERMISSIONS(
-	permissionID GUID NOT NULL,
+	permissionID GUID DEFAULT NEWID() NOT NULL,
 	userID GUID NOT NULL,
 	permission INT NOT NULL,
 	CONSTRAINT PK_USER_PERMISSIONS PRIMARY KEY (permissionID),
