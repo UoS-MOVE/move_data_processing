@@ -163,6 +163,8 @@ def pushSensorData(conn, struct):
 			sqlstate = e.args[1]
 
 			# Close cursor and database connection
+
+			*
 			cursor.close()
 
 			# Print error is one should occur and raise an exception
