@@ -164,7 +164,6 @@ def pushSensorData(conn, struct):
 
 			# Close cursor and database connection
 
-			*
 			cursor.close()
 
 			# Print error is one should occur and raise an exception
@@ -243,6 +242,8 @@ def webhook():
 		#battery status
 		#pending changes
 		#sensor voltage
+
+		
 
 		# Will always run
 		pushMiscSensorData()
