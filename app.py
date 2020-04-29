@@ -174,8 +174,6 @@ def pushSensorData(conn, struct):
 	cursor.close()
 
 
-
-
 def webhook():
 	print("webhook"); sys.stdout.flush()
 	if request.method == 'POST' and request.headers['uname'] == 'salford' and request.headers['pwd'] == 'MOVE-2019':
@@ -253,7 +251,7 @@ def webhook():
 
 		# CALL CSV DUMP HERE
 		csvDump('sensorData', sensorMessages)
-		csvDump('gatewayData',gatewayMessages)
+		csvDump('gatewayData', gatewayMessages)
 
 		# Return status 200 (success) to the remote client
 		return '', 200
