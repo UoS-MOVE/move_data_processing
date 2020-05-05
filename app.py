@@ -174,6 +174,40 @@ def pushSensorData(conn, struct):
 	cursor.close()
 
 
+
+# Function for splitting dataframes with concatonated values into multiple rows
+# Solution provided by user: zouweilin
+# Solution link: https://gist.github.com/jlln/338b4b0b55bd6984f883
+# Modified to use a delimeter regex pattern, so rows can be split using different delimeters
+## Runs but returns the same DF
+import re
+def split_dataframe_rows(df,column_selectors, delimiters):
+	# we need to keep track of the ordering of the columns
+	regexPattern = "|".join(map(re.escape,delimiters))
+	def _split_list_to_rows(row,row_accumulator,column_selector,regexPattern):
+		split_rows = {}
+		max_split = 0
+		for column_selector in column_selectors:
+			split_row = row[column_selector].split(regexPattern)
+			split_rows[column_selector] = split_row
+			if len(split_row) > max_split:
+				max_split = len(split_row)
+			
+		for i in range(max_split):
+			new_row = row.to_dict()
+			for column_selector in column_selectors:
+				try:
+					new_row[column_selector] = split_rows[column_selector].pop(0)
+				except IndexError:
+					new_row[column_selector] = ''
+			row_accumulator.append(new_row)
+
+	new_rows = []
+	df.apply(_split_list_to_rows,axis=1,args = (new_rows,column_selectors,regexPattern))
+	new_df = pd.DataFrame(new_rows, columns=df.columns)
+	return new_df
+
+# Primary (main) function
 def webhook():
 	print("webhook"); sys.stdout.flush()
 	if request.method == 'POST' and request.headers['uname'] == 'salford' and request.headers['pwd'] == 'MOVE-2019':
@@ -196,14 +230,40 @@ def webhook():
 		# CONNECT TO DB HERE
 		conn = dbConnect()
 
-		# GATEWAY AND SENSOR TO DB HERE
+		# GATEWAY AND SENSOR TO DB HERE - Legacy Database
 		pushGatewayData(conn, gatewayMessages)
 		pushSensorData(conn, sensorMessages)
 
+		# Delimeters used in the recieved sensor JSON
+		delimeters = "%2c","|"
+		# The columns that need to be split to remove concatonated values
+		sensorColumns = ["rawData", "dataValue", "dataType", "plotValues", "plotLabels"]
+		# Split the dataframe to remove concatonated values
+		splitDf = split_dataframe_rows(sensorMessages, sensorColumns, delimeters)
+
+
+
+		
 		# ADDITIONAL PROCESSING HERE
 		for i, x in sensorMessages.iterrows():
 			#print("Pushing sensor message " + str(i) + " to the database.")
-			dbTable = "dbo.sensorData"
+			
+			# Split the current JSON if there is concatonated data. ( %2c & | )
+			if "%2c" in x['rawData']:
+				print('rawData contains %2c')
+
+				# Raw data values concatonated by %2c
+				rawDataList = x['rawData'].split("%2c")
+				
+				# Formatted data concatonated by |
+				dataValueList = x['dataValue'].str.split(pat = "|", expand = True)
+				dataTypeList = x['dataType'].split("|")
+				
+				# Plot data concatonated by |
+				plotValuesList = x['plotValue'].split("|")
+				plotLabelsList = x['plotLabels'].split("|")
+			
+			dbTable = "dbo.sensorData" 
 			columns = "(sensorID, sensorName, applicationID, networkID, dataMessageGUID, sensorState, messageDate, rawData, dataType, dataValue, plotValues, plotLabels, batteryLevel, signalStrength, pendingChange, voltage)"
 
 			sensorID = x['sensorID']
