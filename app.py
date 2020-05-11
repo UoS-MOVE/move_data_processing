@@ -179,7 +179,6 @@ def pushSensorData(conn, struct):
 # Solution provided by user: zouweilin
 # Solution link: https://gist.github.com/jlln/338b4b0b55bd6984f883
 # Modified to use a delimeter regex pattern, so rows can be split using different delimeters
-## Runs but returns the same DF
 import re
 def split_dataframe_rows(df,column_selectors, delimiters):
 	# we need to keep track of the ordering of the columns
@@ -188,7 +187,7 @@ def split_dataframe_rows(df,column_selectors, delimiters):
 		split_rows = {}
 		max_split = 0
 		for column_selector in column_selectors:
-			split_row = row[column_selector].split(regexPattern)
+			split_row = re.split(regexPattern,row[column_selector])
 			split_rows[column_selector] = split_row
 			if len(split_row) > max_split:
 				max_split = len(split_row)
@@ -207,6 +206,7 @@ def split_dataframe_rows(df,column_selectors, delimiters):
 	new_df = pd.DataFrame(new_rows, columns=df.columns)
 	return new_df
 
+
 # Primary (main) function
 def webhook():
 	print("webhook"); sys.stdout.flush()
@@ -217,14 +217,20 @@ def webhook():
 		jsonLoad = request.json
 		
 		# Dump JSON to file system
+		## To be disabled for production use ##
 		jsonDump(jsonLoad)
-		
+
 		# Load gateway and sensor message data form JSON into separate variables
 		gatewayMessages = jsonLoad['gatewayMessage']
 		sensorMessages = jsonLoad['sensorMessages']
 		# Convert the JSONs into pandas dataframes
 		gatewayMessages = json_normalize(gatewayMessages)
 		sensorMessages = json_normalize(sensorMessages)
+
+		# Dump the data to CSV files using the prepared functions
+		## To be disabled for production use ##
+		csvDump('sensorData', sensorMessages)
+		csvDump('gatewayData', gatewayMessages)
 
 
 		# CONNECT TO DB HERE
@@ -238,40 +244,55 @@ def webhook():
 		delimeters = "%2c","|"
 		# The columns that need to be split to remove concatonated values
 		sensorColumns = ["rawData", "dataValue", "dataType", "plotValues", "plotLabels"]
-		# Split the dataframe to remove concatonated values
+		# Split the dataframe to move concatonated values to new row
 		splitDf = split_dataframe_rows(sensorMessages, sensorColumns, delimeters)
 
 
 
 		
 		# ADDITIONAL PROCESSING HERE
-		for i, x in sensorMessages.iterrows():
-			#print("Pushing sensor message " + str(i) + " to the database.")
+		for i, x in splitDf.iterrows():
+			print("Processing sensor message " + str(i) + ".")
 			
-			# Split the current JSON if there is concatonated data. ( %2c & | )
-			if "%2c" in x['rawData']:
-				print('rawData contains %2c')
+			# Define tables for normalised sensor data.
+			dbTable_applications = "dbo.APPLICATIONS"
+			dbTable_networks = "dbo.NETWORKS"
+			dbTable_sensors = "dbo.SENSORS"
+			dbTable_dataTypes = "dbo.DATA_TYPES"
+			dbTable_readings = "dbo.READINGS"
+			dbTable_signalStatus = "dbo.SIGNAL_STATUS"
+			dbTable_batteryStatus = "dbo.BATTERY_STATUS"
+			dbTabel_pendingChanges = "dbo.PENDING_CHANGES"
+			dbTable_sensorVoltage = "dbo.SENSOR_VOLTAGE"
 
-				# Raw data values concatonated by %2c
-				rawDataList = x['rawData'].split("%2c")
-				
-				# Formatted data concatonated by |
-				dataValueList = x['dataValue'].str.split(pat = "|", expand = True)
-				dataTypeList = x['dataType'].split("|")
-				
-				# Plot data concatonated by |
-				plotValuesList = x['plotValue'].split("|")
-				plotLabelsList = x['plotLabels'].split("|")
-			
-			dbTable = "dbo.sensorData" 
-			columns = "(sensorID, sensorName, applicationID, networkID, dataMessageGUID, sensorState, messageDate, rawData, dataType, dataValue, plotValues, plotLabels, batteryLevel, signalStrength, pendingChange, voltage)"
 
+			# Define database columns per table
+			applicationsColumns = "(applicationID)"
+			networksColumns = "(networkID)"
+			sensorsColumns = "(sensorID, applicationID, networkID, sensorName)"
+			dataTypesColumns = "(dTypeID, dataType)" # Special table. dTypeID NEEDS to be selected for other tables and is not available in the JSON
+			readingsColumns = "(readingID, dataMessageGUID, sensorID, dTypeID, reading, messageDate, messageType)" # dTypeID value to be inserted after SELECTION from DB
+			signalStatusColumns = "(readingID, dataMessageGUID, signalStrength)"
+			batteryStatusColumns = "(readingID, dataMessageGUID, batteryLevel)"
+			pendingChangesColumns = "(readingID, dataMessageGUID, pendingChange)"
+			sensorVoltageColumns = "(readingID, dataMessageGUID, voltage)"
+
+
+
+
+			# Separate current dataframe row into independant variables. 
 			sensorID = x['sensorID']
 			sensorName = x['sensorName']
 			applicationID = x['applicationID']
 			networkID = x['networkID']
 			dataMessageGUID = x['dataMessageGUID']
 			sensorState = x['state']
+			messageDate = x['messageDate']
+			rawData = x['rawData']
+			dataType = x['dataType'] # Not used, replaced by dTypeID
+			dataValue = x['dataValue']
+			plotValues = x['plotValues']
+			plotLabels = x['plotLabels']
 			batteryLevel = x['batteryLevel']
 			signalStrength = x['signalStrength']
 
@@ -280,6 +301,13 @@ def webhook():
 			else:
 				pendingChange = 1
 			sensorVoltage = x['voltage']
+
+
+			# Check if sensorID already exists, if it does then do not inser into SENSORS table
+			 
+
+
+
 
 		##############
 
@@ -308,10 +336,6 @@ def webhook():
 
 		# CLOSE DB CONNECTIONS HERE
 		conn.close()
-
-		# CALL CSV DUMP HERE
-		csvDump('sensorData', sensorMessages)
-		csvDump('gatewayData', gatewayMessages)
 
 		# Return status 200 (success) to the remote client
 		return '', 200
