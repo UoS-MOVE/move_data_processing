@@ -281,7 +281,7 @@ def webhook():
 
 
 			# Separate current dataframe row into independant variables. 
-			sensorID = x['sensorID']
+			sensorID = x['sensorID'] # Created value, obtain from own DB
 			sensorName = x['sensorName']
 			applicationID = x['applicationID']
 			networkID = x['networkID']
