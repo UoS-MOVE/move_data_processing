@@ -1,20 +1,49 @@
-CREATE PROCEDURE PROC_SELECT_SENSOR_ID (@sensorName as NVARCHAR(20))
+CREATE PROCEDURE PROC_SELECT_SENSOR_ID (@sensorName as NVARCHAR(20), @sensorCount INT OUTPUT)
 AS
 BEGIN
-	SELECT sensorID
+	SELECT @sensorCount = COUNT(sensorID)
 	FROM salfordMove.dbo.SENSORS
 	WHERE sensorName LIKE @sensorName
 END;
 GO
 
-CREATE PROCEDURE PROC_SELECT_DATA_TYPE_ID (@dataType AS NVARCHAR(20))
+/*
+## For calling the procedure:
+DECLARE @sensorName = sensorName
+DECLARE @sensorCount INT
+EXECUTE PROC_SELECT_SENSOR_ID @sensorName, @sensorCount OUTPUT
+PRINT @sensorCount
+*/
+
+
+CREATE PROCEDURE PROC_CREATE_NEW_SENSOR (@applicationID as INT, @networkID as INT, @sensorName as NVARCHAR(20), @sensorID UNIQUEIDENTIFIER OUTPUT)
 AS
 BEGIN
-	SELECT dataTypeID
-	FROM salfordMove.dbo.DATA_TYPES
-	WHERE dType LIKE @dataType
+	DECLARE @sensorID UNIQUEIDENTIFIER  
+	SET @sensorID = NEWID()
+	INSERT INTO salford.dbo.SENSORS (sensorID, applicationID, networkID, sensorName) VALUES (@sensorID, @applicationID, @networkID, @sensorName)
 END;
 GO
+
+
+
+CREATE PROCEDURE PROC_SELECT_DATA_TYPE_ID (@dataType AS NVARCHAR(20), @dataTypeID UNIQUEIDENTIFIER OUTPUT)
+AS
+BEGIN
+	SELECT @dataTypeID = dataTypeID
+	FROM salfordMove.dbo.DATA_TYPES
+	WHERE dataType LIKE @dataType
+END;
+GO
+
+/*
+## For calling the procedure:
+DECLARE @dataType = dataType
+DECLARE @dataTypeID UNIQUEIDENTIFIER
+EXECUTE PROC_SELECT_DATA_TYPE_ID @dataType, @dataTypeID OUTPUT
+PRINT @sensorCount
+*/
+
 
 CREATE PROCEDURE PROC_INSERT_DATA(@sensorID AS INT, @applicationID AS INT, @networkID AS INT, @sensorName AS NVARCHAR(MAX), @dataMessageGUID AS UNIQUEIDENTIFIER, @dTypeID AS UNIQUEIDENTIFIER, @reading AS NVARCHAR(5), @messageType AS NVARCHAR(5), @signalStrength AS FLOAT, @batteryLevel AS INT, @pendingChange AS BIT, @voltage AS FLOAT)
 AS
@@ -24,6 +53,10 @@ BEGIN
 	WHERE sensorID = @sensorID
 END;
 GO
+
+
+
+
 
 /*
 	How can this be done?
