@@ -289,6 +289,7 @@ def webhook():
 			sensorState = x['state']
 			messageDate = x['messageDate']
 			rawData = x['rawData']
+			dTypeID = x['dTypeID']
 			dataType = x['dataType'] # Not used, replaced by dTypeID
 			dataValue = x['dataValue']
 			plotValues = x['plotValues']
