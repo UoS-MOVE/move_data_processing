@@ -21,16 +21,27 @@ AS
 BEGIN
 	DECLARE @sensorID UNIQUEIDENTIFIER  
 	SET @sensorID = NEWID()
+
 	INSERT INTO salford.dbo.SENSORS (sensorID, applicationID, networkID, sensorName) VALUES (@sensorID, @applicationID, @networkID, @sensorName)
 END;
 GO
 
+/*
+## For calling the procedure:
+DECLARE @applicationID = applicationID
+DECLARE @networkID = networkID
+DECLARE @sensorName = sensorName
+DECLARE @sensorID UNIQUEIDENTIFIER
+EXECUTE PROC_SELECT_SENSOR_ID @applicationID, @networkID, sensorID OUTPUT
+## sensorID = EXECUTE PROC_SELECT_SENSOR_ID (@applicationID, @networkID)
+PRINT @sensorID
+*/
 
 
 CREATE PROCEDURE PROC_SELECT_DATA_TYPE_ID (@dataType AS NVARCHAR(20), @dataTypeID UNIQUEIDENTIFIER OUTPUT)
 AS
 BEGIN
-	SELECT @dataTypeID = dataTypeID
+	SELECT @dataTypeID = COUNT(dataTypeID)
 	FROM salfordMove.dbo.DATA_TYPES
 	WHERE dataType LIKE @dataType
 END;
@@ -45,6 +56,8 @@ PRINT @sensorCount
 */
 
 
+
+/* What is this?
 CREATE PROCEDURE PROC_INSERT_DATA(@sensorID AS INT, @applicationID AS INT, @networkID AS INT, @sensorName AS NVARCHAR(MAX), @dataMessageGUID AS UNIQUEIDENTIFIER, @dTypeID AS UNIQUEIDENTIFIER, @reading AS NVARCHAR(5), @messageType AS NVARCHAR(5), @signalStrength AS FLOAT, @batteryLevel AS INT, @pendingChange AS BIT, @voltage AS FLOAT)
 AS
 BEGIN
@@ -53,6 +66,21 @@ BEGIN
 	WHERE sensorID = @sensorID
 END;
 GO
+*/
+
+
+CREATE PROCEDURE PROC_CREATE_DATA_TYPE (@dataType AS NVARCHAR(20), @dataTypeID UNIQUEIDENTIFIER OUTPUT)
+AS
+BEGIN
+	DECLARE @sensorID UNIQUEIDENTIFIER  
+	SET @sensorID = NEWID()
+
+	SELECT @dataTypeID = dataTypeID
+	FROM salfordMove.dbo.DATA_TYPES
+	WHERE dataType LIKE @dataType
+END;
+GO
+
 
 
 
