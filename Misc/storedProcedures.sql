@@ -86,9 +86,46 @@ PRINT @plotLabelID
 */
 
 
-CREATE PROCEDURE PROC_CREATE_READING (@readingID UNIQUEIDENTIFIER OUTPUT, @dataMessageGUID UNIQUEIDENTIFIER, @sensorID UNIQUEIDENTIFIER, @dTypeID UNIQUEIDENTIFIER, reading, messageDate, messageType)
+CREATE PROCEDURE PROC_CREATE_READING (@readingID UNIQUEIDENTIFIER OUTPUT, @dataMessageGUID UNIQUEIDENTIFIER, @sensorID UNIQUEIDENTIFIER, @rawData NVARCHAR(10), @dTypeID UNIQUEIDENTIFIER, @dataValue NVARCHAR(10), @pLabelID UNIQUEIDENTIFIER, @plotValue NVARCHAR(10), @messageDate DATETIME, @messageType NVARCHAR(10))
+AS
+BEGIN
+	SET @readingID = NEWID()
+
+	INSERT INTO salfordMove.dbo.READINGS (readingID, dataMessageGUID, sensorID, rawData, dTypeID, dataValue, pLabelID, plotValue, messageDate, messageType) VALUES (@readingID, @dataMessageGUID, @sensorID, @rawData, @dTypeID, @dataValue, @pLabelID, @plotValue, @messageDate, @messageType)
+END;
+GO
 
 
+CREATE PROCEDURE PROC_CREATE_SIGNAL_STATUS (@readingID UNIQUEIDENTIFIER, @dataMessageGUID UNIQUEIDENTIFIER, @signalStrength FLOAT)
+AS
+BEGIN
+	INSERT INTO salfordMove.dbo.SIGNAL_STATUS (readingID, dataMessageGUID, signalStrength) VALUES (@readingID, @dataMessageGUID, @signalStrength)
+END;
+GO
+
+
+CREATE PROCEDURE PROC_CREATE_BATTERY_STATUS (@readingID UNIQUEIDENTIFIER, @dataMessageGUID UNIQUEIDENTIFIER, @batteryLevel INT)
+AS
+BEGIN
+	INSERT INTO salfordMove.dbo.BATTERY_STATUS (readingID, dataMessageGUID, batteryLevel) VALUES (@readingID, @dataMessageGUID, @batteryLevel)
+END;
+GO
+
+
+CREATE PROCEDURE PROC_CREATE_PENDING_CHANGES (@readingID UNIQUEIDENTIFIER, @dataMessageGUID UNIQUEIDENTIFIER, @pendingChange BIT)
+AS
+BEGIN
+	INSERT INTO salfordMove.dbo.PENDING_CHANGES (readingID, dataMessageGUID, pendingChange) VALUES (@readingID, @dataMessageGUID, @pendingChange)
+END;
+GO
+
+
+CREATE PROCEDURE PROC_CREATE_SENSOR_VOLTAGE (@readingID UNIQUEIDENTIFIER, @dataMessageGUID UNIQUEIDENTIFIER, @voltage FLOAT)
+AS
+BEGIN
+	INSERT INTO salfordMove.dbo.SENSOR_VOLTAGE (readingID, dataMessageGUID, voltage) VALUES (@readingID, @dataMessageGUID, @voltage)
+END;
+GO
 
 /*
 	How can this be done?
