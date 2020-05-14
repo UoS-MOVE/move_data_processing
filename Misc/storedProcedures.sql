@@ -1,6 +1,7 @@
 CREATE PROCEDURE PROC_GET_OR_CREATE_SENSOR (@applicationID as INT, @networkID as INT, @sensorName as NVARCHAR(20), @sensorID UNIQUEIDENTIFIER OUTPUT)
 AS
 BEGIN
+	SET NOCOUNT ON;
 	IF EXISTS
 	(
 		SELECT sensorID
@@ -31,6 +32,7 @@ PRINT @sensorID
 CREATE PROCEDURE PROC_GET_OR_CREATE_DATA_TYPE (@dataType AS NVARCHAR(20), @dataTypeID UNIQUEIDENTIFIER OUTPUT)
 AS
 BEGIN
+	SET NOCOUNT ON;
 	IF EXISTS
 	(
 		SELECT dTypeID
@@ -60,6 +62,7 @@ PRINT @dataTypeID
 CREATE PROCEDURE PROC_GET_OR_CREATE_PLOT_LABELS (@plotLabel AS NVARCHAR(20), @pLabelID UNIQUEIDENTIFIER OUTPUT)
 AS
 BEGIN
+	SET NOCOUNT ON;
 	IF EXISTS
 	(
 		SELECT pLabelID
@@ -89,6 +92,7 @@ PRINT @plotLabelID
 CREATE PROCEDURE PROC_CREATE_READING (@readingID UNIQUEIDENTIFIER OUTPUT, @dataMessageGUID UNIQUEIDENTIFIER, @sensorID UNIQUEIDENTIFIER, @rawData NVARCHAR(10), @dTypeID UNIQUEIDENTIFIER, @dataValue NVARCHAR(10), @pLabelID UNIQUEIDENTIFIER, @plotValue NVARCHAR(10), @messageDate DATETIME, @messageType NVARCHAR(10))
 AS
 BEGIN
+	SET NOCOUNT ON;
 	SET @readingID = NEWID()
 
 	INSERT INTO salfordMove.dbo.READINGS (readingID, dataMessageGUID, sensorID, rawData, dTypeID, dataValue, pLabelID, plotValue, messageDate, messageType) VALUES (@readingID, @dataMessageGUID, @sensorID, @rawData, @dTypeID, @dataValue, @pLabelID, @plotValue, @messageDate, @messageType)
@@ -99,6 +103,7 @@ GO
 CREATE PROCEDURE PROC_CREATE_SIGNAL_STATUS (@readingID UNIQUEIDENTIFIER, @dataMessageGUID UNIQUEIDENTIFIER, @signalStrength FLOAT)
 AS
 BEGIN
+	SET NOCOUNT ON;
 	INSERT INTO salfordMove.dbo.SIGNAL_STATUS (readingID, dataMessageGUID, signalStrength) VALUES (@readingID, @dataMessageGUID, @signalStrength)
 END;
 GO
@@ -107,6 +112,7 @@ GO
 CREATE PROCEDURE PROC_CREATE_BATTERY_STATUS (@readingID UNIQUEIDENTIFIER, @dataMessageGUID UNIQUEIDENTIFIER, @batteryLevel INT)
 AS
 BEGIN
+	SET NOCOUNT ON;
 	INSERT INTO salfordMove.dbo.BATTERY_STATUS (readingID, dataMessageGUID, batteryLevel) VALUES (@readingID, @dataMessageGUID, @batteryLevel)
 END;
 GO
@@ -115,6 +121,7 @@ GO
 CREATE PROCEDURE PROC_CREATE_PENDING_CHANGES (@readingID UNIQUEIDENTIFIER, @dataMessageGUID UNIQUEIDENTIFIER, @pendingChange BIT)
 AS
 BEGIN
+	SET NOCOUNT ON;
 	INSERT INTO salfordMove.dbo.PENDING_CHANGES (readingID, dataMessageGUID, pendingChange) VALUES (@readingID, @dataMessageGUID, @pendingChange)
 END;
 GO
@@ -123,6 +130,7 @@ GO
 CREATE PROCEDURE PROC_CREATE_SENSOR_VOLTAGE (@readingID UNIQUEIDENTIFIER, @dataMessageGUID UNIQUEIDENTIFIER, @voltage FLOAT)
 AS
 BEGIN
+	SET NOCOUNT ON;
 	INSERT INTO salfordMove.dbo.SENSOR_VOLTAGE (readingID, dataMessageGUID, voltage) VALUES (@readingID, @dataMessageGUID, @voltage)
 END;
 GO
