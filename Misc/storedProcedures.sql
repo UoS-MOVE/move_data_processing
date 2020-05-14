@@ -53,8 +53,41 @@ DECLARE @dataType = dataType
 DECLARE @dataTypeID UNIQUEIDENTIFIER
 EXECUTE PROC_GET_OR_CREATE_DATA_TYPE @dataType, @dataTypeID OUTPUT
 ## dataTypeID = EXECUTE PROC_SELECT_SENSOR_ID (@dataType)
-PRINT @sensorCount
+PRINT @dataTypeID
 */
+
+
+CREATE PROCEDURE PROC_GET_OR_CREATE_PLOT_LABELS (@plotLabel AS NVARCHAR(20), @pLabelID UNIQUEIDENTIFIER OUTPUT)
+AS
+BEGIN
+	IF EXISTS
+	(
+		SELECT pLabelID
+		FROM salfordMove.dbo.PLOT_LABELS
+		WHERE plotLabel LIKE @plotLabel
+	)
+		SELECT @pLabelID = pLabelID
+		FROM salfordMove.dbo.PLOT_LABELS
+		WHERE plotLabel LIKE @plotLabel
+	ELSE
+		SET @pLabelID = NEWID()
+
+		INSERT INTO salfordMove.dbo.PLOT_LABELS (pLabelID, dataType) VALUES (@plotLabel, @plotLabel)
+END;
+GO
+
+/*
+## For calling the procedure:
+DECLARE @dataType = dataType
+DECLARE @pLabelID UNIQUEIDENTIFIER
+EXECUTE PROC_GET_OR_CREATE_PLOT_LABELS @dataType, @pLabelID OUTPUT
+## plotLabelID = EXECUTE PROC_GET_OR_CREATE_PLOT_LABELS (@dataType)
+PRINT @plotLabelID
+*/
+
+
+CREATE PROCEDURE PROC_CREATE_READING (@readingID UNIQUEIDENTIFIER OUTPUT, @dataMessageGUID UNIQUEIDENTIFIER, @sensorID UNIQUEIDENTIFIER, @dTypeID UNIQUEIDENTIFIER, reading, messageDate, messageType)
+
 
 
 /*
