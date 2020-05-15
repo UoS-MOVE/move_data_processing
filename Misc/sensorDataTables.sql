@@ -3,13 +3,13 @@
 
 CREATE TABLE salfordMove.dbo.APPLICATIONS(
 	applicationID INT NOT NULL,
-	applicationName NVARCHAR(20),
+	applicationName NVARCHAR(20) NULL,
 	CONSTRAINT PK_APPLICATIONS PRIMARY KEY (applicationID)
 );
 
 CREATE TABLE salfordMove.dbo.NETWORKS(
 	networkID INT NOT NULL,
-	networkName NVARCHAR(20),
+	networkName NVARCHAR(20) NULL,
 	CONSTRAINT PK_NETWORKS PRIMARY KEY (networkID)
 );
 
