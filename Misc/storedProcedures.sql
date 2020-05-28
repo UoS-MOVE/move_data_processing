@@ -102,7 +102,7 @@ BEGIN
 	ELSE
 		SET @pLabelID = NEWID()
 
-		INSERT INTO salfordMove.dbo.PLOT_LABELS (pLabelID, dataType) VALUES (@plotLabel, @plotLabel)
+		INSERT INTO salfordMove.dbo.PLOT_LABELS (pLabelID, plotLabel) VALUES (@pLabelID, @plotLabel)
 END;
 GO
 
