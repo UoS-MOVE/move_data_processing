@@ -76,6 +76,35 @@ def csvDump(fileName, struct):
 	else:
 		struct.to_csv(CSV_DIR + fileName + '.csv', index=False)
 
+
+# Executes a Stored Procedure in the database to get or create data
+def execProcedure(conn, sql, params):
+	# Create new cursor from existing connection 
+	cursor = conn.cursor
+	# Execute the SQL statement with the parameters prepared
+	cursor.execute(sql, params)
+	# Fetch all results for the executed statement
+	rows = cursor.fetchall()
+	while rows:
+		print(rows)
+		if cursor.nextset():
+			rows = cursor.fetchall()
+		else:
+			rows = None
+	# Close open database cursor
+	cursor.close
+
+
+# Executes a Stored Procedure in the database to create data without returning any values 
+def execProcedureNoReturn(conn, sql, params):
+	# Create new cursor from existing connection 
+	cursor = conn.cursor
+	# Execute the SQL statement with the parameters prepared
+	cursor.execute(sql, params)
+	# Close open database cursor
+	cursor.close
+
+
 def pushGatewayData(conn, struct):
 	print('Push gateway data')
 
@@ -244,100 +273,189 @@ def webhook():
 		delimeters = "%2c","|"
 		# The columns that need to be split to remove concatonated values
 		sensorColumns = ["rawData", "dataValue", "dataType", "plotValues", "plotLabels"]
-		# Split the dataframe to move concatonated values to new row
+		# Split the dataframe to move concatonated values to new rows
 		splitDf = split_dataframe_rows(sensorMessages, sensorColumns, delimeters)
 
 
 
 		
 		# ADDITIONAL PROCESSING HERE
-		for i, x in splitDf.iterrows():
+		for i, sensorData in splitDf.iterrows():
 			print("Processing sensor message " + str(i) + ".")
 			
-			# Define tables for normalised sensor data.
-			dbTable_applications = "dbo.APPLICATIONS"
-			dbTable_networks = "dbo.NETWORKS"
-			dbTable_sensors = "dbo.SENSORS"
-			dbTable_dataTypes = "dbo.DATA_TYPES"
-			dbTable_readings = "dbo.READINGS"
-			dbTable_signalStatus = "dbo.SIGNAL_STATUS"
-			dbTable_batteryStatus = "dbo.BATTERY_STATUS"
-			dbTabel_pendingChanges = "dbo.PENDING_CHANGES"
-			dbTable_sensorVoltage = "dbo.SENSOR_VOLTAGE"
-
-
-			# Define database columns per table
-			applicationsColumns = "(applicationID)"
-			networksColumns = "(networkID)"
-			sensorsColumns = "(sensorID, applicationID, networkID, sensorName)"
-			dataTypesColumns = "(dTypeID, dataType)" # Special table. dTypeID NEEDS to be selected for other tables and is not available in the JSON
-			readingsColumns = "(readingID, dataMessageGUID, sensorID, dTypeID, reading, messageDate, messageType)" # dTypeID value to be inserted after SELECTION from DB
-			signalStatusColumns = "(readingID, dataMessageGUID, signalStrength)"
-			batteryStatusColumns = "(readingID, dataMessageGUID, batteryLevel)"
-			pendingChangesColumns = "(readingID, dataMessageGUID, pendingChange)"
-			sensorVoltageColumns = "(readingID, dataMessageGUID, voltage)"
-
-
-
-
 			# Separate current dataframe row into independant variables. 
-			sensorID = x['sensorID'] # Created value, obtain from own DB
-			sensorName = x['sensorName']
-			applicationID = x['applicationID']
-			networkID = x['networkID']
-			dataMessageGUID = x['dataMessageGUID']
-			sensorState = x['state']
-			messageDate = x['messageDate']
-			rawData = x['rawData']
-			dTypeID = x['dTypeID']
-			dataType = x['dataType'] # Not used, replaced by dTypeID
-			dataValue = x['dataValue']
-			plotValues = x['plotValues']
-			plotLabels = x['plotLabels']
-			batteryLevel = x['batteryLevel']
-			signalStrength = x['signalStrength']
+			sensorID = sensorData['sensorID'] # Created value, obtain from own DB
+			sensorName = sensorData['sensorName']
+			applicationID = sensorData['applicationID']
+			networkID = sensorData['networkID']
+			dataMessageGUID = sensorData['dataMessageGUID']
+			sensorState = sensorData['state']
+			messageDate = sensorData['messageDate']
+			rawData = sensorData['rawData']
+			dTypeID = sensorData['dTypeID'] # Get from DB
+			dataType = sensorData['dataType'] # Not used, replaced by dTypeID
+			dataValue = sensorData['dataValue']
+			pLabelID = sensorData['plotLabelID'] # Get from DB
+			plotLabel = sensorData['plotLabel'] # Not used, replaced with plotLabelID
+			plotValue = sensorData['plotValue']
+			batteryLevel = sensorData['batteryLevel']
+			signalStrength = sensorData['signalStrength']
 
-			if x['pendingChange'] == 'False':
-				pendingChange = 0
+			if sensorData['pendingChange'] == 'False':
+				sensorData['pendingChange'] = 0
 			else:
-				pendingChange = 1
-			sensorVoltage = x['voltage']
+				sensorData['pendingChange'] = 1
+			
+			sensorVoltage = sensorData['voltage']
 
 
-			# Check if sensorID already exists, if it does then do not inser into SENSORS table
-			 
+			##############
+
+			## CREATE NETWORK ##
+			# Prepare SQL statement to call stored procedure to create a network entry using 
+			# the networkID from the JSON
+			sql = "{CALL [dbo].[PROC_GET_OR_CREATE_NETWORK] (?)}"
+			# Bind the parameters that are required for the procedure to function
+			params = (sensorData['networkID'])
+
+			# Execute the stored procedure to create a network if it doesn't exist, 
+			# and ignore input if exists
+			execProcedureNoReturn(conn, sql, params)
 
 
+			## CREATE APPLICATION ##
+			# Prepare SQL statement to call stored procedure to create an application entry using 
+			# the applicationID from the JSON
+			sql = "{CALL [dbo].[PROC_GET_OR_CREATE_APPLICATION] (?)}"
+			# Bind the applicationID used to check if app exists in DB
+			params = (sensorData['applicationID'])
+
+			# Execute the stored procedure to create an application if it doesn't exist, 
+			# and ignore input if exists
+			execProcedureNoReturn(conn, sql, params)
 
 
-		##############
+			## GET OR CREATE SENSOR ##
+			# pyodbc doesn't support the ".callproc" function from ODBC, 
+			# so the following SQL statement is used to execute the stored procedure.
+			#
+			# Stored prodecure will submit the applicationID, networkID, and sensorName 
+			# to the procedure, and will always recieve a sensorID in return.
+			sql = """\
+				DECLARE @out UNIQUEIDENTIFIER;
+				EXEC [dbo].[PROC_GET_OR_CREATE_SENSOR] @param_in = (?, ?, ?), @param_out = @out OUTPUT;
+				SELECT @out AS the_output;
+				"""
+			# Bind the parameters that are required for the procedure to function
+			params = (sensorData['applicationID'], sensorData['networkID'], sensorData['sensorName'])
+			
+			# Execute the procedure using the prepared SQL & parameters to 
+			# create a new sensor in the DB, or get an existing one.
+			sensorData['sensorID'] = execProcedure(conn, sql, params)
 
-		# PUSH PROCESSED DATA TO DB
-		# Conditional selection depending on sensor data
-		
 
-		# Prepare everything using Stored Procedures and push data to them?
-		# Still need to organise the logic for iterating through the data structure 
+			## GET OR CREATE DATA TYPE ##
+			# Prepare SQL statement to call stored procedure to a data type entry using 
+			# the data type from the JSON and return a generated dataTypeID.
+			sql = """\
+				DECLARE @out UNIQUEIDENTIFIER;
+				EXEC [dbo].[PROC_GET_OR_CREATE_DATA_TYPE] @param_in = ?, @param_out = @out OUTPUT;
+				SELECT @out AS the_output;
+				"""
+			# Bind the parameters that are required for the procedure to function
+			params = (sensorData['dataType'])
+			
+			# Execute the procedure using the prepared SQL & parameters to 
+			# create a new sensor in the DB, or get an existing one.
+			sensorData['dataTypeID'] = execProcedure(conn, sql, params)
 
 
-		#applications - Not necessary, data is static after initial creation
-		#networks - Not necessary, data is static after initial creation
-		#sensors
-		#data types
-		#readings
-		#signal status
-		#battery status
-		#pending changes
-		#sensor voltage
+			## GET OR CREATE PLOT LABELS ##
+			# Prepare SQL statement to call stored procedure to a plot label entry using 
+			# the data type from the JSON and return a generated plotLabelID.
+			sql = """\
+				DECLARE @out UNIQUEIDENTIFIER;
+				EXEC [dbo].[PROC_GET_OR_CREATE_PLOT_LABELS] @param_in = ?, @param_out = @out OUTPUT;
+				SELECT @out AS the_output;
+				"""
+			# Bind the parameters that are required for the procedure to function
+			params = (sensorData['plotLabel'])
+			
+			# Execute the procedure using the prepared SQL & parameters to 
+			# create a new plot label in the DB, or get an existing one.
+			sensorData['plotLabelID'] = execProcedure(conn, sql, params)
 
-		
 
-		# Will always run
-		pushMiscSensorData()
+			## GET OR CREATE READING ##
+			# Prepare SQL statement to call stored procedure to create a new reading using 
+			# the values aggregated from the JSON and generated variables from the DB.
+			# A generated readingID will be returned. 
+			sql = """\
+				DECLARE @out UNIQUEIDENTIFIER;
+				EXEC [dbo].[PROC_CREATE_READING] @param_in = (?, ?, ?, ?, ?, ?, ?, ?, ?), @param_out = @out OUTPUT;
+				SELECT @out AS the_output;
+				"""
+			# Bind the parameters that are required for the procedure to function
+			params = (sensorData['dataMessageGUID'], sensorData['sensorID'], sensorData['rawData'], sensorData['dataTypeID'], sensorData['dataValue'], sensorData['plotLabelID'], sensorData['plotValue'], sensorData['messageDate'], sensorData['messageType'])
+			
+			# Execute the procedure using the prepared SQL & parameters to 
+			# create a new reading in the DB, and return the genreated ID.
+			sensorData['readingID'] = execProcedure(conn, sql, params)
 
-		# CLOSE DB CONNECTIONS HERE
+
+			## GET OR CREATE SIGNAL STATUS ##
+			# Prepare SQL statement to call stored procedure to create a new signal 
+			# status entry using the readingID from the DB and the dataMessgaeGUID, 
+			# and signalStrength, from the JSON.
+			sql = "{CALL [dbo].[PROC_CREATE_SIGNAL_STATUS] (?, ?, ?)}"
+			# Bind the parameters that are required for the procedure to function
+			params = (sensorData['readingID'], sensorData['dataMessageGUID'], sensorData['signalStrength'])
+			
+			# Execute the procedure using the prepared SQL & parameters to 
+			# create a new signal status in the DB.
+			execProcedureNoReturn(conn, sql, params)
+
+
+			## GET OR CREATE BATTERY STATUS ##
+			# Prepare SQL statement to call stored procedure to create a new battery status 
+			# entry using the readingID from the DB and dataMessgaeGUID, and batteryLevel, from the JSON.
+			sql = "{CALL [dbo].[PROC_CREATE_BATTERY_STATUS] (?, ?, ?)}"
+			# Bind the parameters that are required for the procedure to function
+			params = (sensorData['readingID'], sensorData['dataMessageGUID'], sensorData['batteryLevel'])
+			
+			# Execute the procedure using the prepared SQL & parameters to 
+			# create a new battery status in the DB.
+			execProcedureNoReturn(conn, sql, params)
+
+
+			## GET OR CREATE PENDING CHANGES ##
+			# Prepare SQL statement to call stored procedure to create a pending change 
+			# entry using the readingID from the DB and dataMessgaeGUID, 
+			# and pendingChange, from the JSON.
+			sql = "{CALL [dbo].[PROC_CREATE_PENDING_CHANGES] (?, ?, ?)}"
+			# Bind the parameters that are required for the procedure to function
+			params = (sensorData['readingID'], sensorData['dataMessageGUID'], sensorData['pendingChange'])
+			
+			# Execute the procedure using the prepared SQL & parameters to 
+			# create a new pending change in the DB.
+			execProcedureNoReturn(conn, sql, params)
+
+
+			## GET OR CREATE SENSOR VOLTAGE ##
+			# Prepare SQL statement to call stored procedure to create a sensor voltage 
+			# entry using the readingID from the DB and dataMessgaeGUID, 
+			# and voltage, from the JSON.
+			sql = "{CALL [dbo].[PROC_CREATE_SENSOR_VOLTAGE] (?, ?, ?)}"
+			# Bind the parameters that are required for the procedure to function
+			params = (sensorData['readingID'], sensorData['dataMessageGUID'], sensorData['voltage'])
+			
+			# Execute the procedure using the prepared SQL & parameters to 
+			# create a new voltage entry in the DB.
+			execProcedureNoReturn(conn, sql, params)
+
+
+		# Close open database connection
 		conn.close()
-
 		# Return status 200 (success) to the remote client
 		return '', 200
 
