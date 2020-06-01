@@ -81,28 +81,55 @@ def csvDump(fileName, struct):
 def execProcedure(conn, sql, params):
 	# Create new cursor from existing connection 
 	cursor = conn.cursor
-	# Execute the SQL statement with the parameters prepared
-	cursor.execute(sql, params)
-	# Fetch all results for the executed statement
-	rows = cursor.fetchall()
-	while rows:
-		print(rows)
-		if cursor.nextset():
-			rows = cursor.fetchall()
-		else:
-			rows = None
-	# Close open database cursor
-	cursor.close
+
+	# Attempt to execute the stored procedure
+	try:
+		# Execute the SQL statement with the parameters prepared
+		cursor.execute(sql, params)
+		# Fetch all results for the executed statement
+		rows = cursor.fetchall()
+		while rows:
+			print(rows)
+			if cursor.nextset():
+				rows = cursor.fetchall()
+			else:
+				rows = None
+		# Close open database cursor
+		cursor.close
+
+	except pyodbc.Error as e:
+		# Extract the error argument
+		sqlstate = e.args[1]
+
+		# Close cursor
+		cursor.close()
+
+		# Print error is one should occur and raise an exception
+		print("An error occurred executing stored procedure: " + sqlstate)
+		abort(500)
 
 
 # Executes a Stored Procedure in the database to create data without returning any values 
 def execProcedureNoReturn(conn, sql, params):
 	# Create new cursor from existing connection 
 	cursor = conn.cursor
-	# Execute the SQL statement with the parameters prepared
-	cursor.execute(sql, params)
-	# Close open database cursor
-	cursor.close
+
+	try:
+		# Execute the SQL statement with the parameters prepared
+		cursor.execute(sql, params)
+		# Close open database cursor
+		cursor.close()
+
+	except pyodbc.Error as e:
+		# Extract the error argument
+		sqlstate = e.args[1]
+
+		# Close cursor
+		cursor.close()
+
+		# Print error is one should occur and raise an exception
+		print("An error occurred executing stored procedure (noReturn): " + sqlstate)
+		abort(500)
 
 
 def pushGatewayData(conn, struct):
