@@ -117,17 +117,7 @@ def pushGatewayData(conn, struct):
 		dbTable = "dbo.gatewayData"
 		columns = "(gatewayID, gatewayName, accountID, networkID, messageType, gatewayPower, batteryLevel, gatewayDate, gatewayCount, signalStrength, pendingChange)"
 
-		gatewayID = x['gatewayID']
-		gatewayName = x['gatewayName']
-		accountID = x['accountID']
-		networkID = x['networkID']
-		messageType = x['messageType']
-		gatewayPower = x['power']
-		batteryLevel = x['batteryLevel']
-		gatewayDate = x['date']
-		gatewayCount = x['count']
-		signalStrength = x['signalStrength']
-
+		# Convert pendingChange True/False value into a boolean 1/0
 		if x['pendingChange'] == 'False':
 			pendingChange = 0
 		else:
@@ -135,7 +125,7 @@ def pushGatewayData(conn, struct):
 
 		try:
 			# Execute query on database
-			cursor.execute("INSERT INTO " + dbTable + columns + " VALUES (" + str(gatewayID) + ",'" + str(gatewayName) + "'," + str(accountID) + "," + str(networkID) + "," + str(messageType) + "," + str(gatewayPower) + "," + str(batteryLevel) + ",'" + str(gatewayDate) + "'," + str(gatewayCount) + "," + str(signalStrength) + "," + str(pendingChange) + ")")
+			cursor.execute("INSERT INTO " + dbTable + columns + " VALUES (" + str(x['gatewayID']) + ",'" + str(x['gatewayName']) + "'," + str(x['accountID']) + "," + str(x['networkID']) + "," + str(x['messageType']) + "," + str(x['gatewayPower']) + "," + str(x['batteryLevel']) + ",'" + str(x['gatewayDate']) + "'," + str(x['gatewayCount']) + "," + str(x['signalStrength']) + "," + str(pendingChange) + ")")
 			#cursor.execute("INSERT INTO " + dbTable + columns + " values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", [gatewayID, "'"gatewayName"'", accountID, messageType, gatewayPower, batteryLevel, datetime.date(gatewayDate), gatewayCount, signalStrength, pendingChange])
 			conn.commit()
 
@@ -161,30 +151,15 @@ def pushSensorData(conn, struct):
 		dbTable = "dbo.sensorData"
 		columns = "(sensorID, sensorName, applicationID, networkID, dataMessageGUID, sensorState, messageDate, rawData, dataType, dataValue, plotValues, plotLabels, batteryLevel, signalStrength, pendingChange, voltage)"
 
-		sensorID = x['sensorID']
-		sensorName = x['sensorName']
-		applicationID = x['applicationID']
-		networkID = x['networkID']
-		dataMessageGUID = x['dataMessageGUID']
-		sensorState = x['state']
-		messageDate = x['messageDate']
-		rawData = x['rawData']
-		dataType = x['dataType']
-		dataValue = x['dataValue']
-		plotValues = x['plotValues']
-		plotLabels = x['plotLabels']
-		batteryLevel = x['batteryLevel']
-		signalStrength = x['signalStrength']
-
+		# Convert pendingChange True/False value into a boolean 1/0
 		if x['pendingChange'] == 'False':
 			pendingChange = 0
 		else:
 			pendingChange = 1
-		sensorVoltage = x['voltage']
 
 		try:
 			# Execute query on database
-			cursor.execute("INSERT INTO " + dbTable + columns + " VALUES (" + str(sensorID) + ",'" + str(sensorName) + "'," + str(applicationID) + "," + str(networkID) + ",'" + str(dataMessageGUID) + "'," + str(sensorState) + ",'" + str(messageDate) + "','" + str(rawData) + "','" + str(dataType) + "','" + str(dataValue) + "','" + str(plotValues) + "','" + str(plotLabels) + "'," + str(batteryLevel) + "," + str(signalStrength) + ',' + str(pendingChange) + ',' + str(sensorVoltage) + ")")
+			cursor.execute("INSERT INTO " + dbTable + columns + " VALUES (" + str(x['sensorID']) + ",'" + str(x['sensorName']) + "'," + str(x['applicationID']) + "," + str(x['networkID']) + ",'" + str(x['dataMessageGUID']) + "'," + str(x['sensorState']) + ",'" + str(x['messageDate']) + "','" + str(x['rawData']) + "','" + str(x['dataType']) + "','" + str(x['dataValue']) + "','" + str(x['plotValues']) + "','" + str(x['plotLabels']) + "'," + str(x['batteryLevel']) + "," + str(x['signalStrength']) + ',' + str(pendingChange) + ',' + str(x['sensorVoltage']) + ")")
 			#cursor.execute("INSERT INTO " + dbTable + columns + " values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", [sensorID, "'"sensorName"'", applicationID, networkID, "'"dataMessageGUID"'", sensorState, datetime.date(messageDate), "'"rawData"'", "'"dataType"'", "'"dataValue"'", "'"plotValues"'", "'"plotLabels"'", batteryLevel, signalStrength, pendingChange])
 			conn.commit()
 
@@ -282,31 +257,12 @@ def webhook():
 		# ADDITIONAL PROCESSING HERE
 		for i, sensorData in splitDf.iterrows():
 			print("Processing sensor message " + str(i) + ".")
-			
-			# Separate current dataframe row into independant variables. 
-			sensorID = sensorData['sensorID'] # Created value, obtain from own DB
-			sensorName = sensorData['sensorName']
-			applicationID = sensorData['applicationID']
-			networkID = sensorData['networkID']
-			dataMessageGUID = sensorData['dataMessageGUID']
-			sensorState = sensorData['state']
-			messageDate = sensorData['messageDate']
-			rawData = sensorData['rawData']
-			dTypeID = sensorData['dTypeID'] # Get from DB
-			dataType = sensorData['dataType'] # Not used, replaced by dTypeID
-			dataValue = sensorData['dataValue']
-			pLabelID = sensorData['plotLabelID'] # Get from DB
-			plotLabel = sensorData['plotLabel'] # Not used, replaced with plotLabelID
-			plotValue = sensorData['plotValue']
-			batteryLevel = sensorData['batteryLevel']
-			signalStrength = sensorData['signalStrength']
 
+			# Convert pendingChange True/False value into a boolean 1/0
 			if sensorData['pendingChange'] == 'False':
 				sensorData['pendingChange'] = 0
 			else:
 				sensorData['pendingChange'] = 1
-			
-			sensorVoltage = sensorData['voltage']
 
 
 			##############
