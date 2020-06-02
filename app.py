@@ -12,7 +12,8 @@
 
 # Import libraries
 import sys
-from flask import Flask, request, abort
+from flask import Flask, request, abort, current_app, g
+from flask.cli import with_appcontext
 import json
 import pandas as pd
 import os
@@ -48,6 +49,18 @@ app = Flask(__name__)
 # Main body
 @app.route('/', methods=['POST'])
 
+def jsonDump(struct):
+	print('JSON dump')
+	with open(JSON_DIR + JSON_NAME, 'w') as f:
+		json.dump(struct, f)
+
+def csvDump(fileName, struct):
+	print('CSV Dump')
+	if os.path.exists(CSV_DIR + fileName + '.csv'):
+		with open(CSV_DIR + fileName + '.csv', 'a') as fd:
+			struct.to_csv(fd, header=False, index=False)
+	else:
+		struct.to_csv(CSV_DIR + fileName + '.csv', index=False)
 
 def dbConnect():
 	print('dbConnect')
@@ -63,18 +76,20 @@ def dbConnect():
 	else:
 		return cnxn
 
-def jsonDump(struct):
-	print('JSON dump')
-	with open(JSON_DIR + JSON_NAME, 'w') as f:
-		json.dump(struct, f)
+# Helper function to get DB and return it to the 
+def getDB():
+	"""Opens a new database connection if there is none yet for the
+	current application context.
+	"""
+	if 'db' not in g:
+		g.db = dbConnect()
+	return g.db
 
-def csvDump(fileName, struct):
-	print('CSV Dump')
-	if os.path.exists(CSV_DIR + fileName + '.csv'):
-		with open(CSV_DIR + fileName + '.csv', 'a') as fd:
-			struct.to_csv(fd, header=False, index=False)
-	else:
-		struct.to_csv(CSV_DIR + fileName + '.csv', index=False)
+def closeDB(e=None):
+	db = g.pop('db', None)
+
+	if db is not None:
+		db.close()
 
 
 # Executes a Stored Procedure in the database to get or create data
@@ -265,11 +280,12 @@ def webhook():
 
 
 		# CONNECT TO DB HERE
-		conn = dbConnect()
+		# conn = dbConnect() # Replaced with helper function
+		conn = getDB()
 
 		# GATEWAY AND SENSOR TO DB HERE - Legacy Database
-		pushGatewayData(conn, gatewayMessages)
-		pushSensorData(conn, sensorMessages)
+		#pushGatewayData(conn, gatewayMessages) # Disabled for testing
+		#pushSensorData(conn, sensorMessages) # Disabled for testing
 
 		# Delimeters used in the recieved sensor JSON
 		delimeters = "%2c","|"
@@ -439,6 +455,7 @@ def webhook():
 
 		# Close open database connection
 		conn.close()
+		closeDB()
 		# Return status 200 (success) to the remote client
 		return '', 200
 
