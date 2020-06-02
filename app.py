@@ -46,14 +46,15 @@ SQL_CONN_STR = 'DSN=Salford-SQL-Server;Database='+DATABASE+';Trusted_Connection=
 app = Flask(__name__)
 
 
-# Main body
-@app.route('/', methods=['POST'])
-
+# Function to save the recieved JSON file to disk
 def jsonDump(struct):
 	print('JSON dump')
+	# Open a file for writing, filename will always be unique so append functions uneccessary
 	with open(JSON_DIR + JSON_NAME, 'w') as f:
+		# Save the JSON to a JSON file on disk
 		json.dump(struct, f)
 
+# Function to save the processed data to a CSV
 def csvDump(fileName, struct):
 	print('CSV Dump')
 	if os.path.exists(CSV_DIR + fileName + '.csv'):
@@ -62,6 +63,7 @@ def csvDump(fileName, struct):
 	else:
 		struct.to_csv(CSV_DIR + fileName + '.csv', index=False)
 
+# Function for establishing a connection to the database
 def dbConnect():
 	print('dbConnect')
 	try:
@@ -78,9 +80,6 @@ def dbConnect():
 
 # Helper function to get DB and return it to the 
 def getDB():
-	"""Opens a new database connection if there is none yet for the
-	current application context.
-	"""
 	if 'db' not in g:
 		g.db = dbConnect()
 	return g.db
@@ -252,6 +251,8 @@ def split_dataframe_rows(df,column_selectors, delimiters):
 	new_df = pd.DataFrame(new_rows, columns=df.columns)
 	return new_df
 
+# Main body
+@app.route('/', methods=['POST'])
 
 # Primary (main) function
 def webhook():
@@ -259,7 +260,7 @@ def webhook():
 	if request.method == 'POST' and request.headers['uname'] == 'salford' and request.headers['pwd'] == 'MOVE-2019':
 		print('Request Authenticated & JSON Recieved')
 
-		#Store the recieved JSON file from the request 
+		# Store the recieved JSON file from the request 
 		jsonLoad = request.json
 		
 		# Dump JSON to file system
