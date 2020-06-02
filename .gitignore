@@ -3,3 +3,5 @@ __pycache__
 .hookVenv
 .vscode
 .dbCreds
+/data/csv/*
+/data/json/*
