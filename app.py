@@ -20,7 +20,7 @@ import os
 import traceback
 import datetime
 
-from pandas.io.json import json_normalize
+from pandas import json_normalize
 
 import pyodbc
 
@@ -31,7 +31,7 @@ CSV_DIR = os.getcwd() + '/data/csv/'
 JSON_DIR = os.getcwd() + '/data/json/'
 
 #SQL Server connection info
-with open("/config/.dbCreds.json") as f:
+with open("./config/.dbCreds.json") as f:
 	dbCreds = json.load(f)
 
 
@@ -109,7 +109,7 @@ def execProcedure(conn, sql, params):
 			else:
 				rows = None
 		# Close open database cursor
-		cursor.close
+		cursor.close()
 
 	except pyodbc.Error as e:
 		# Extract the error argument
@@ -143,6 +143,7 @@ def execProcedureNoReturn(conn, sql, params):
 
 		# Print error is one should occur and raise an exception
 		print("An error occurred executing stored procedure (noReturn): " + sqlstate)
+		print(e) # Testing
 		abort(500)
 
 
@@ -295,8 +296,6 @@ def webhook():
 		# Split the dataframe to move concatonated values to new rows
 		splitDf = split_dataframe_rows(sensorMessages, sensorColumns, delimeters)
 
-
-
 		
 		# ADDITIONAL PROCESSING HERE
 		for i, sensorData in splitDf.iterrows():
@@ -320,7 +319,9 @@ def webhook():
 
 			# Execute the stored procedure to create a network if it doesn't exist, 
 			# and ignore input if exists
+			print('Step 1/10: Creating network entry')
 			execProcedureNoReturn(conn, sql, params)
+			print('Network entry created')
 
 
 			## CREATE APPLICATION ##
@@ -332,7 +333,9 @@ def webhook():
 
 			# Execute the stored procedure to create an application if it doesn't exist, 
 			# and ignore input if exists
+			print('Step 2/10: Creating application entry')
 			execProcedureNoReturn(conn, sql, params)
+			print('Network application created')
 
 
 			## GET OR CREATE SENSOR ##
@@ -343,7 +346,7 @@ def webhook():
 			# to the procedure, and will always recieve a sensorID in return.
 			sql = """\
 				DECLARE @out UNIQUEIDENTIFIER;
-				EXEC [dbo].[PROC_GET_OR_CREATE_SENSOR] @param_in = (?, ?, ?), @param_out = @out OUTPUT;
+				EXEC [dbo].[PROC_GET_OR_CREATE_SENSOR] @applicationID = ?, @networkID = ?, @sensorName = ?, @sensorID = @out OUTPUT;
 				SELECT @out AS the_output;
 				"""
 			# Bind the parameters that are required for the procedure to function
@@ -351,15 +354,17 @@ def webhook():
 			
 			# Execute the procedure using the prepared SQL & parameters to 
 			# create a new sensor in the DB, or get an existing one.
+			print('Step 3/10: Creating or getting sensor')
 			sensorData['sensorID'] = execProcedure(conn, sql, params)
-
+			print(sensorData['sensorID'])
+			
 
 			## GET OR CREATE DATA TYPE ##
 			# Prepare SQL statement to call stored procedure to a data type entry using 
 			# the data type from the JSON and return a generated dataTypeID.
 			sql = """\
 				DECLARE @out UNIQUEIDENTIFIER;
-				EXEC [dbo].[PROC_GET_OR_CREATE_DATA_TYPE] @param_in = ?, @param_out = @out OUTPUT;
+				EXEC [dbo].[PROC_GET_OR_CREATE_DATA_TYPE] @dataType = ?, @dataTypeID = @out OUTPUT;
 				SELECT @out AS the_output;
 				"""
 			# Bind the parameters that are required for the procedure to function
@@ -367,15 +372,16 @@ def webhook():
 			
 			# Execute the procedure using the prepared SQL & parameters to 
 			# create a new sensor in the DB, or get an existing one.
+			print('Step 4/10: Creating or getting data type ID')
 			sensorData['dataTypeID'] = execProcedure(conn, sql, params)
-
+			
 
 			## GET OR CREATE PLOT LABELS ##
 			# Prepare SQL statement to call stored procedure to a plot label entry using 
 			# the data type from the JSON and return a generated plotLabelID.
 			sql = """\
 				DECLARE @out UNIQUEIDENTIFIER;
-				EXEC [dbo].[PROC_GET_OR_CREATE_PLOT_LABELS] @param_in = ?, @param_out = @out OUTPUT;
+				EXEC [dbo].[PROC_GET_OR_CREATE_PLOT_LABELS] @plotLabel = ?, @pLabelID = @out OUTPUT;
 				SELECT @out AS the_output;
 				"""
 			# Bind the parameters that are required for the procedure to function
@@ -383,8 +389,9 @@ def webhook():
 			
 			# Execute the procedure using the prepared SQL & parameters to 
 			# create a new plot label in the DB, or get an existing one.
+			print('Step 5/10: Creating or getting plot label ID')
 			sensorData['plotLabelID'] = execProcedure(conn, sql, params)
-
+			
 
 			## GET OR CREATE READING ##
 			# Prepare SQL statement to call stored procedure to create a new reading using 
@@ -392,7 +399,7 @@ def webhook():
 			# A generated readingID will be returned. 
 			sql = """\
 				DECLARE @out UNIQUEIDENTIFIER;
-				EXEC [dbo].[PROC_CREATE_READING] @param_in = (?, ?, ?, ?, ?, ?, ?, ?, ?), @param_out = @out OUTPUT;
+				EXEC [dbo].[PROC_CREATE_READING] @dataMessageGUID = ?, @sensorID = ?, @rawData = ?, @dataTypeID = ?, @dataValue = ?, @plotLabelID = ?, @plotValue = ?, @messageDate = ?, @messageType = ?, @readingID = @out OUTPUT;
 				SELECT @out AS the_output;
 				"""
 			# Bind the parameters that are required for the procedure to function
@@ -400,8 +407,9 @@ def webhook():
 			
 			# Execute the procedure using the prepared SQL & parameters to 
 			# create a new reading in the DB, and return the genreated ID.
+			print('Step 6/10: Creating reading, and getting ID')
 			sensorData['readingID'] = execProcedure(conn, sql, params)
-
+			
 
 			## GET OR CREATE SIGNAL STATUS ##
 			# Prepare SQL statement to call stored procedure to create a new signal 
@@ -413,8 +421,9 @@ def webhook():
 			
 			# Execute the procedure using the prepared SQL & parameters to 
 			# create a new signal status in the DB.
+			print('Step 7/10: Creating signal atatus')
 			execProcedureNoReturn(conn, sql, params)
-
+			
 
 			## GET OR CREATE BATTERY STATUS ##
 			# Prepare SQL statement to call stored procedure to create a new battery status 
@@ -425,8 +434,9 @@ def webhook():
 			
 			# Execute the procedure using the prepared SQL & parameters to 
 			# create a new battery status in the DB.
+			print('Step 8/10: Creating battery status')
 			execProcedureNoReturn(conn, sql, params)
-
+			
 
 			## GET OR CREATE PENDING CHANGES ##
 			# Prepare SQL statement to call stored procedure to create a pending change 
@@ -438,8 +448,9 @@ def webhook():
 			
 			# Execute the procedure using the prepared SQL & parameters to 
 			# create a new pending change in the DB.
+			print('Step 9/10: Creating pending change')
 			execProcedureNoReturn(conn, sql, params)
-
+			
 
 			## GET OR CREATE SENSOR VOLTAGE ##
 			# Prepare SQL statement to call stored procedure to create a sensor voltage 
@@ -451,6 +462,7 @@ def webhook():
 			
 			# Execute the procedure using the prepared SQL & parameters to 
 			# create a new voltage entry in the DB.
+			print('Step 10/10: Creating voltage reading')
 			execProcedureNoReturn(conn, sql, params)
 
 
