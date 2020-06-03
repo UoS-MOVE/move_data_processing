@@ -5,3 +5,5 @@ __pycache__
 .dbCreds
 /data/csv/*
 /data/json/*
+/config/.dbCreds.json
+/config/.postCreds.json

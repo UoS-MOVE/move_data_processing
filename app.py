@@ -31,7 +31,7 @@ CSV_DIR = os.getcwd() + '/data/csv/'
 JSON_DIR = os.getcwd() + '/data/json/'
 
 #SQL Server connection info
-with open(".dbCreds") as f:
+with open("/config/.dbCreds.json") as f:
 	dbCreds = json.load(f)
 
 
@@ -94,7 +94,7 @@ def closeDB(e=None):
 # Executes a Stored Procedure in the database to get or create data
 def execProcedure(conn, sql, params):
 	# Create new cursor from existing connection 
-	cursor = conn.cursor
+	cursor = conn.cursor()
 
 	# Attempt to execute the stored procedure
 	try:
@@ -126,7 +126,7 @@ def execProcedure(conn, sql, params):
 # Executes a Stored Procedure in the database to create data without returning any values 
 def execProcedureNoReturn(conn, sql, params):
 	# Create new cursor from existing connection 
-	cursor = conn.cursor
+	cursor = conn.cursor()
 
 	try:
 		# Execute the SQL statement with the parameters prepared
@@ -265,7 +265,7 @@ def webhook():
 		
 		# Dump JSON to file system
 		## To be disabled for production use ##
-		jsonDump(jsonLoad)
+		#jsonDump(jsonLoad) # Disabled for testing as it doesn't work on Windows
 
 		# Load gateway and sensor message data form JSON into separate variables
 		gatewayMessages = jsonLoad['gatewayMessage']
