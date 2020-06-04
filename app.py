@@ -24,6 +24,8 @@ from pandas import json_normalize
 
 import pyodbc
 
+from uuid import UUID
+
 
 # Variable declarations
 JSON_NAME = 'monnit_' + str(datetime.datetime.now()) + '.json'
@@ -62,6 +64,17 @@ def csvDump(fileName, struct):
 			struct.to_csv(fd, header=False, index=False)
 	else:
 		struct.to_csv(CSV_DIR + fileName + '.csv', index=False)
+
+# Convert returned strings from the DB into GUID
+def strToUUID(struct):
+	# Remove the leading and trailing characters from the ID
+	struct = struct.replace("[('", "")
+	struct = struct.replace("', )]", "")
+	# Convert trimmed string into a GUID (UUID)
+	g.strUUID =  UUID(struct)
+
+	# Return to calling function
+	return g.strUUID
 
 # Function for establishing a connection to the database
 def dbConnect():
@@ -104,10 +117,11 @@ def execProcedure(conn, sql, params):
 		rows = cursor.fetchall()
 		while rows:
 			print(rows)
-			if cursor.nextset():
-				rows = cursor.fetchall()
-			else:
-				rows = None
+			return str(rows)
+			#if cursor.nextset(): # Disabled during testing, unsure if required if result will always return one result
+			#	rows = cursor.fetchall()
+			#else:
+			#	rows = None
 		# Close open database cursor
 		cursor.close()
 
@@ -355,7 +369,8 @@ def webhook():
 			# Execute the procedure using the prepared SQL & parameters to 
 			# create a new sensor in the DB, or get an existing one.
 			print('Step 3/10: Creating or getting sensor')
-			sensorData['sensorID'] = execProcedure(conn, sql, params)
+			# Execute the procedure and return sensorID and convert trimmed string into a GUID (UUID)
+			sensorData['sensorID'] = strToUUID(execProcedure(conn, sql, params))
 			print(sensorData['sensorID'])
 			
 
@@ -368,13 +383,14 @@ def webhook():
 				SELECT @out AS the_output;
 				"""
 			# Bind the parameters that are required for the procedure to function
-			params = (sensorData['dataType'])
+			params = sensorData['dataType']
 			
 			# Execute the procedure using the prepared SQL & parameters to 
 			# create a new sensor in the DB, or get an existing one.
 			print('Step 4/10: Creating or getting data type ID')
-			sensorData['dataTypeID'] = execProcedure(conn, sql, params)
-			
+			sensorData['dataTypeID'] = strToUUID(execProcedure(conn, sql, params))
+			print(sensorData['dataTypeID'])
+
 
 			## GET OR CREATE PLOT LABELS ##
 			# Prepare SQL statement to call stored procedure to a plot label entry using 
@@ -385,12 +401,13 @@ def webhook():
 				SELECT @out AS the_output;
 				"""
 			# Bind the parameters that are required for the procedure to function
-			params = (sensorData['plotLabel'])
-			
+			print(sensorData['plotLabel'])
+			params = sensorData['plotLabel']
+			print(sensorData['plotLabel'])
 			# Execute the procedure using the prepared SQL & parameters to 
 			# create a new plot label in the DB, or get an existing one.
 			print('Step 5/10: Creating or getting plot label ID')
-			sensorData['plotLabelID'] = execProcedure(conn, sql, params)
+			sensorData['plotLabelID'] = strToUUID(execProcedure(conn, sql, params))
 			
 
 			## GET OR CREATE READING ##
@@ -408,7 +425,7 @@ def webhook():
 			# Execute the procedure using the prepared SQL & parameters to 
 			# create a new reading in the DB, and return the genreated ID.
 			print('Step 6/10: Creating reading, and getting ID')
-			sensorData['readingID'] = execProcedure(conn, sql, params)
+			sensorData['readingID'] = strToUUID(execProcedure(conn, sql, params))
 			
 
 			## GET OR CREATE SIGNAL STATUS ##
