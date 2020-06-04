@@ -7,3 +7,4 @@ __pycache__
 /data/json/*
 /config/.dbCreds.json
 /config/.postCreds.json
+/testing/
