@@ -68,17 +68,17 @@ BEGIN
 	SET NOCOUNT ON;
 	IF EXISTS
 	(
-		SELECT dTypeID
+		SELECT dataTypeID
 		FROM salfordMove.dbo.DATA_TYPES
 		WHERE dataType LIKE @dataType
 	)
-		SELECT @dataTypeID = dTypeID
+		SELECT @dataTypeID = dataTypeID
 		FROM salfordMove.dbo.DATA_TYPES
 		WHERE dataType LIKE @dataType
 	ELSE
 		SET @dataTypeID = NEWID()
 
-		INSERT INTO salfordMove.dbo.DATA_TYPES (dTypeID, dataType) VALUES (@dataTypeID, @dataType)
+		INSERT INTO salfordMove.dbo.DATA_TYPES (dataTypeID, dataType) VALUES (@dataTypeID, @dataType)
 END;
 GO
 
@@ -86,36 +86,36 @@ GO
 /* Check if PLOT LABEL exists,
 if not create it and return the generated plotLabelID, 
 if exists SELECT plotLabelID from table and return it */
-CREATE PROCEDURE PROC_GET_OR_CREATE_PLOT_LABELS (@plotLabel AS NVARCHAR(20), @pLabelID UNIQUEIDENTIFIER OUTPUT)
+CREATE PROCEDURE PROC_GET_OR_CREATE_PLOT_LABELS (@plotLabel AS NVARCHAR(20), @plotLabelID UNIQUEIDENTIFIER OUTPUT)
 AS
 BEGIN
 	SET NOCOUNT ON;
 	IF EXISTS
 	(
-		SELECT pLabelID
+		SELECT plotLabelID
 		FROM salfordMove.dbo.PLOT_LABELS
 		WHERE plotLabel LIKE @plotLabel
 	)
-		SELECT @pLabelID = pLabelID
+		SELECT @plotLabelID = plotLabelID
 		FROM salfordMove.dbo.PLOT_LABELS
 		WHERE plotLabel LIKE @plotLabel
 	ELSE
-		SET @pLabelID = NEWID()
+		SET @plotLabelID = NEWID()
 
-		INSERT INTO salfordMove.dbo.PLOT_LABELS (pLabelID, plotLabel) VALUES (@pLabelID, @plotLabel)
+		INSERT INTO salfordMove.dbo.PLOT_LABELS (plotLabelID, plotLabel) VALUES (@plotLabelID, @plotLabel)
 END;
 GO
 
 
 /* Create a new reading in the database, 
 and return the genreated readingID */
-CREATE PROCEDURE PROC_CREATE_READING (@readingID UNIQUEIDENTIFIER OUTPUT, @dataMessageGUID UNIQUEIDENTIFIER, @sensorID UNIQUEIDENTIFIER, @rawData NVARCHAR(10), @dTypeID UNIQUEIDENTIFIER, @dataValue NVARCHAR(10), @pLabelID UNIQUEIDENTIFIER, @plotValue NVARCHAR(10), @messageDate DATETIME, @messageType NVARCHAR(10))
+CREATE PROCEDURE PROC_CREATE_READING (@readingID UNIQUEIDENTIFIER OUTPUT, @dataMessageGUID UNIQUEIDENTIFIER, @sensorID UNIQUEIDENTIFIER, @rawData NVARCHAR(10), @dataTypeID UNIQUEIDENTIFIER, @dataValue NVARCHAR(10), @plotLabelID UNIQUEIDENTIFIER, @plotValue NVARCHAR(10), @messageDate DATETIME)
 AS
 BEGIN
 	SET NOCOUNT ON;
 	SET @readingID = NEWID()
 
-	INSERT INTO salfordMove.dbo.READINGS (readingID, dataMessageGUID, sensorID, rawData, dTypeID, dataValue, pLabelID, plotValue, messageDate, messageType) VALUES (@readingID, @dataMessageGUID, @sensorID, @rawData, @dTypeID, @dataValue, @pLabelID, @plotValue, @messageDate, @messageType)
+	INSERT INTO salfordMove.dbo.READINGS (readingID, dataMessageGUID, sensorID, rawData, dataTypeID, dataValue, plotLabelID, plotValue, messageDate) VALUES (@readingID, @dataMessageGUID, @sensorID, @rawData, @dataTypeID, @dataValue, @plotLabelID, @plotValue, @messageDate)
 END;
 GO
 
