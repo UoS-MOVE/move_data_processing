@@ -397,17 +397,15 @@ def webhook():
 			# the data type from the JSON and return a generated plotLabelID.
 			sql = """\
 				DECLARE @out UNIQUEIDENTIFIER;
-				EXEC [dbo].[PROC_GET_OR_CREATE_PLOT_LABELS] @plotLabel = ?, @pLabelID = @out OUTPUT;
+				EXEC [dbo].[PROC_GET_OR_CREATE_PLOT_LABELS] @plotLabel = ?, @plotLabelID = @out OUTPUT;
 				SELECT @out AS the_output;
 				"""
 			# Bind the parameters that are required for the procedure to function
-			print(sensorData['plotLabel'])
-			params = sensorData['plotLabel']
-			print(sensorData['plotLabel'])
+			params = sensorData['plotLabels']
 			# Execute the procedure using the prepared SQL & parameters to 
 			# create a new plot label in the DB, or get an existing one.
 			print('Step 5/10: Creating or getting plot label ID')
-			sensorData['plotLabelID'] = strToUUID(execProcedure(conn, sql, params))
+			sensorData['plotLabelID'] = strToUUID(execProcedure(conn, sql, params)) ## Problem here?
 			
 
 			## GET OR CREATE READING ##
@@ -416,11 +414,11 @@ def webhook():
 			# A generated readingID will be returned. 
 			sql = """\
 				DECLARE @out UNIQUEIDENTIFIER;
-				EXEC [dbo].[PROC_CREATE_READING] @dataMessageGUID = ?, @sensorID = ?, @rawData = ?, @dataTypeID = ?, @dataValue = ?, @plotLabelID = ?, @plotValue = ?, @messageDate = ?, @messageType = ?, @readingID = @out OUTPUT;
+				EXEC [dbo].[PROC_CREATE_READING] @dataMessageGUID = ?, @sensorID = ?, @rawData = ?, @dataTypeID = ?, @dataValue = ?, @plotLabelID = ?, @plotValue = ?, @messageDate = ?, @readingID = @out OUTPUT;
 				SELECT @out AS the_output;
 				"""
 			# Bind the parameters that are required for the procedure to function
-			params = (sensorData['dataMessageGUID'], sensorData['sensorID'], sensorData['rawData'], sensorData['dataTypeID'], sensorData['dataValue'], sensorData['plotLabelID'], sensorData['plotValue'], sensorData['messageDate'], sensorData['messageType'])
+			params = (sensorData['dataMessageGUID'], sensorData['sensorID'], sensorData['rawData'], sensorData['dataTypeID'], sensorData['dataValue'], sensorData['plotLabelID'], sensorData['plotValues'], sensorData['messageDate'])
 			
 			# Execute the procedure using the prepared SQL & parameters to 
 			# create a new reading in the DB, and return the genreated ID.
