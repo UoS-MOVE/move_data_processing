@@ -7,7 +7,6 @@
     "settings": {
         "editor.detectIndentation": false,
 		"editor.insertSpaces": false,
-		"python.pythonPath": "C:\\Users\\ebell\\AppData\\Local\\Programs\\Python\\Python38\\python.exe",
 		"python.dataScience.jupyterServerURI": "https://jhub.bellmer.me/user/ebell?token=033096b5bddf40879e00f2ce589b22ef"
     }
 }
