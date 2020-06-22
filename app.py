@@ -253,6 +253,7 @@ def split_dataframe_rows(df,column_selectors, delimiters):
 				max_split = len(split_row)
 			
 		for i in range(max_split):
+			print('Splitting row: ' + i)
 			new_row = row.to_dict()
 			for column_selector in column_selectors:
 				try:
@@ -480,9 +481,8 @@ def webhook():
 			print('Step 10/10: Creating voltage reading')
 			execProcedureNoReturn(conn, sql, params)
 
-
 		# Close open database connection
-		conn.close()
+		#conn.close()
 		closeDB()
 		# Return status 200 (success) to the remote client
 		return '', 200
