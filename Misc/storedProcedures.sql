@@ -53,6 +53,7 @@ BEGIN
 		FROM salfordMove.dbo.SENSORS
 		WHERE sensorName LIKE @sensorName
 	ELSE
+		SET @sensorID = NULL
 		SET @sensorID = NEWID()
 		INSERT INTO salfordMove.dbo.SENSORS (sensorID, applicationID, networkID, sensorName) VALUES (@sensorID, @applicationID, @networkID, @sensorName)
 END;
@@ -76,6 +77,7 @@ BEGIN
 		FROM salfordMove.dbo.DATA_TYPES
 		WHERE dataType LIKE @dataType
 	ELSE
+		SET @dataTypeID = NULL
 		SET @dataTypeID = NEWID()
 
 		INSERT INTO salfordMove.dbo.DATA_TYPES (dataTypeID, dataType) VALUES (@dataTypeID, @dataType)
@@ -100,6 +102,7 @@ BEGIN
 		FROM salfordMove.dbo.PLOT_LABELS
 		WHERE plotLabel LIKE @plotLabel
 	ELSE
+		SET @plotLabelID = NULL
 		SET @plotLabelID = NEWID()
 
 		INSERT INTO salfordMove.dbo.PLOT_LABELS (plotLabelID, plotLabel) VALUES (@plotLabelID, @plotLabel)
@@ -113,6 +116,7 @@ CREATE PROCEDURE PROC_CREATE_READING (@readingID UNIQUEIDENTIFIER OUTPUT, @dataM
 AS
 BEGIN
 	SET NOCOUNT ON;
+	SET @readingID = NULL
 	SET @readingID = NEWID()
 
 	INSERT INTO salfordMove.dbo.READINGS (readingID, dataMessageGUID, sensorID, rawData, dataTypeID, dataValue, plotLabelID, plotValue, messageDate) VALUES (@readingID, @dataMessageGUID, @sensorID, @rawData, @dataTypeID, @dataValue, @plotLabelID, @plotValue, @messageDate)
