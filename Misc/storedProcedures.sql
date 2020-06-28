@@ -9,11 +9,15 @@ BEGIN
 		FROM salfordMove.dbo.NETWORKS
 		WHERE networkID = @networkID
 	)
-	PRINT('NETWORK ID EXISTS IN TABLE, SKIPPING...')
+	BEGIN
+		PRINT('NETWORK ID EXISTS IN TABLE, SKIPPING...')
+	END
 
 	ELSE
-		INSERT INTO salfordMove.dbo.NETWORKS (networkID) VALUES (@networkID)
-END;
+		BEGIN
+			INSERT INTO salfordMove.dbo.NETWORKS (networkID) VALUES (@networkID)
+		END
+END
 GO
 
 
@@ -28,11 +32,15 @@ BEGIN
 		FROM salfordMove.dbo.APPLICATIONS
 		WHERE applicationID = @applicationID
 	)
-	PRINT('APPLICATION ID EXISTS IN TABLE, SKIPPING...')
+	BEGIN
+		PRINT('APPLICATION ID EXISTS IN TABLE, SKIPPING...')
+	END
 
 	ELSE
-		INSERT INTO salfordMove.dbo.APPLICATIONS (applicationID) VALUES (@applicationID)
-END;
+		BEGIN
+			INSERT INTO salfordMove.dbo.APPLICATIONS (applicationID) VALUES (@applicationID)
+		END
+END
 GO
 
 
@@ -49,14 +57,19 @@ BEGIN
 		FROM salfordMove.dbo.SENSORS
 		WHERE sensorName LIKE @sensorName
 	)
+	BEGIN
 		SELECT @sensorID = sensorID
 		FROM salfordMove.dbo.SENSORS
 		WHERE sensorName LIKE @sensorName
+	END
+
 	ELSE
-		SET @sensorID = NULL
-		SET @sensorID = NEWID()
-		INSERT INTO salfordMove.dbo.SENSORS (sensorID, applicationID, networkID, sensorName) VALUES (@sensorID, @applicationID, @networkID, @sensorName)
-END;
+		BEGIN
+			SET @sensorID = NULL
+			SET @sensorID = NEWID()
+			INSERT INTO salfordMove.dbo.SENSORS (sensorID, applicationID, networkID, sensorName) VALUES (@sensorID, @applicationID, @networkID, @sensorName)
+		END
+END
 GO
 
 
@@ -73,15 +86,20 @@ BEGIN
 		FROM salfordMove.dbo.DATA_TYPES
 		WHERE dataType LIKE @dataType
 	)
+	BEGIN
 		SELECT @dataTypeID = dataTypeID
 		FROM salfordMove.dbo.DATA_TYPES
 		WHERE dataType LIKE @dataType
-	ELSE
-		SET @dataTypeID = NULL
-		SET @dataTypeID = NEWID()
+	END
 
-		INSERT INTO salfordMove.dbo.DATA_TYPES (dataTypeID, dataType) VALUES (@dataTypeID, @dataType)
-END;
+	ELSE
+		BEGIN
+			SET @dataTypeID = NULL
+			SET @dataTypeID = NEWID()
+
+			INSERT INTO salfordMove.dbo.DATA_TYPES (dataTypeID, dataType) VALUES (@dataTypeID, @dataType)
+		END
+END
 GO
 
 
@@ -98,15 +116,20 @@ BEGIN
 		FROM salfordMove.dbo.PLOT_LABELS
 		WHERE plotLabel LIKE @plotLabel
 	)
+	BEGIN
 		SELECT @plotLabelID = plotLabelID
 		FROM salfordMove.dbo.PLOT_LABELS
 		WHERE plotLabel LIKE @plotLabel
-	ELSE
-		SET @plotLabelID = NULL
-		SET @plotLabelID = NEWID()
+	END
 
-		INSERT INTO salfordMove.dbo.PLOT_LABELS (plotLabelID, plotLabel) VALUES (@plotLabelID, @plotLabel)
-END;
+	ELSE
+		BEGIN
+			SET @plotLabelID = NULL
+			SET @plotLabelID = NEWID()
+
+			INSERT INTO salfordMove.dbo.PLOT_LABELS (plotLabelID, plotLabel) VALUES (@plotLabelID, @plotLabel)
+		END
+END
 GO
 
 
@@ -120,7 +143,7 @@ BEGIN
 	SET @readingID = NEWID()
 
 	INSERT INTO salfordMove.dbo.READINGS (readingID, dataMessageGUID, sensorID, rawData, dataTypeID, dataValue, plotLabelID, plotValue, messageDate) VALUES (@readingID, @dataMessageGUID, @sensorID, @rawData, @dataTypeID, @dataValue, @plotLabelID, @plotValue, @messageDate)
-END;
+END
 GO
 
 
@@ -130,7 +153,7 @@ AS
 BEGIN
 	SET NOCOUNT ON;
 	INSERT INTO salfordMove.dbo.SIGNAL_STATUS (readingID, dataMessageGUID, signalStrength) VALUES (@readingID, @dataMessageGUID, @signalStrength)
-END;
+END
 GO
 
 
@@ -140,7 +163,7 @@ AS
 BEGIN
 	SET NOCOUNT ON;
 	INSERT INTO salfordMove.dbo.BATTERY_STATUS (readingID, dataMessageGUID, batteryLevel) VALUES (@readingID, @dataMessageGUID, @batteryLevel)
-END;
+END
 GO
 
 
@@ -150,7 +173,7 @@ AS
 BEGIN
 	SET NOCOUNT ON;
 	INSERT INTO salfordMove.dbo.PENDING_CHANGES (readingID, dataMessageGUID, pendingChange) VALUES (@readingID, @dataMessageGUID, @pendingChange)
-END;
+END
 GO
 
 
@@ -160,5 +183,5 @@ AS
 BEGIN
 	SET NOCOUNT ON;
 	INSERT INTO salfordMove.dbo.SENSOR_VOLTAGE (readingID, dataMessageGUID, voltage) VALUES (@readingID, @dataMessageGUID, @voltage)
-END;
+END
 GO
