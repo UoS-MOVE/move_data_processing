@@ -97,11 +97,17 @@ def getDB():
 		g.db = dbConnect()
 	return g.db
 
+def commitDB(e=None):
+	if 'db' not in g:
+		print('DB Connection doesn\'t exist')
+	else:
+		g.db.commit() # Commit the staged data to the DB
+
 def closeDB(e=None):
 	db = g.pop('db', None)
 
 	if db is not None:
-		db.close()
+		db.close() # Close the DB connection
 
 
 # Executes a Stored Procedure in the database to get or create data
@@ -481,9 +487,10 @@ def webhook():
 			print('Step 10/10: Creating voltage reading')
 			execProcedureNoReturn(conn, sql, params)
 
-		# Close open database connection
-		#conn.close()
+		# Commit data and close open database connection
+		commitDB()
 		closeDB()
+
 		# Return status 200 (success) to the remote client
 		return '', 200
 
