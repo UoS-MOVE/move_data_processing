@@ -5,7 +5,7 @@
 # 			   concatonated data from the received data.
 # Author: Ethan Bellmer
 # Date: 16/01/2020
-# Version: 1.0
+# Version: 2.0
 
 # Venv activation is blocked by default because the process isn't singed, so run this first:
 # Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope Process
@@ -36,13 +36,13 @@ JSON_DIR = os.getcwd() + '/data/json/'
 with open("./config/.dbCreds.json") as f:
 	dbCreds = json.load(f)
 
-
+SERVER = dbCreds['SERVER']
 DATABASE = dbCreds['DATABASE']
 UNAME = dbCreds['UNAME']
 PWD = dbCreds['PWD']
 
 # Formatted connection string for the SQL DB.
-SQL_CONN_STR = 'DSN=Salford-SQL-Server;Database='+DATABASE+';Trusted_Connection=no;UID='+UNAME+';PWD='+PWD+';'
+SQL_CONN_STR = 'DSN='+SERVER+';Database='+DATABASE+';Trusted_Connection=no;UID='+UNAME+';PWD='+PWD+';'
 
 # Flask web server
 app = Flask(__name__)
@@ -296,11 +296,6 @@ def webhook():
 		gatewayMessages = json_normalize(gatewayMessages)
 		sensorMessages = json_normalize(sensorMessages)
 
-		# Dump the data to CSV files using the prepared functions
-		## To be disabled for production use ##
-		csvDump('sensorData', sensorMessages)
-		csvDump('gatewayData', gatewayMessages)
-
 
 		# CONNECT TO DB HERE
 		# conn = dbConnect() # Replaced with helper function
@@ -490,6 +485,11 @@ def webhook():
 		# Commit data and close open database connection
 		commitDB()
 		closeDB()
+
+		# Dump the data to CSV files using the prepared functions
+		## To be disabled for production use ##
+		csvDump('sensorData', sensorMessages)
+		#csvDump('gatewayData', gatewayMessages)
 
 		# Return status 200 (success) to the remote client
 		return '', 200
