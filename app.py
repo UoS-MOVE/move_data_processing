@@ -36,6 +36,10 @@ JSON_DIR = os.getcwd() + '/data/json/'
 with open("./config/.dbCreds.json") as f:
 	dbCreds = json.load(f)
 
+#POST credentials info
+with open("./config/.postCreds.json") as f:
+	postCreds = json.load(f)
+
 SERVER = dbCreds['SERVER']
 DATABASE = dbCreds['DATABASE']
 UNAME = dbCreds['UNAME']
@@ -279,7 +283,7 @@ def split_dataframe_rows(df,column_selectors, delimiters):
 # Primary (main) function
 def webhook():
 	print("webhook"); sys.stdout.flush()
-	if request.method == 'POST' and request.headers['uname'] == 'salford' and request.headers['pwd'] == 'MOVE-2019':
+	if request.method == 'POST' and request.headers['uname'] == postCreds['UNAME'] and request.headers['pwd'] == postCreds['PWD']:
 		print('Request Authenticated & JSON Recieved')
 
 		# Store the recieved JSON file from the request 
@@ -495,7 +499,7 @@ def webhook():
 		return '', 200
 
 
-	elif request.method == 'POST' and request.headers['uname'] != 'salford' and request.headers['pwd'] != 'MOVE-2019':
+	elif request.method == 'POST' and request.headers['uname'] != postCreds['UNAME'] and request.headers['pwd'] != postCreds['PWD']:
 		print('Authentication Failed')
 		abort(400)
 	else:
