@@ -25,9 +25,11 @@ import app
 from app import execProcedureNoReturn, execProcedure, dbConnect, split_dataframe_rows, strToUUID
 
 #SQL Server connection info
-with open("./../config/.dbCreds.json") as f:
+with open("./config/.dbCreds.json") as f:
 	dbCreds = json.load(f)
 
+
+CSV_DIR = os.getcwd() + '/data/csv/'
 
 SERVER = dbCreds['SERVER']
 DATABASE = dbCreds['DATABASE']
@@ -200,3 +202,13 @@ for i, sensorData in splitDf.iterrows():
 	# create a new voltage entry in the DB.
 	print('Step 10/10: Creating voltage reading')
 	execProcedureNoReturn(conn, sql, params)
+
+# Check if CSV exists, create if it doesn't
+if os.path.exists(CSV_DIR + 'sensorDataNormalised.csv'):
+	splitDf.to_csv('sensorDataNormalised.csv', mode = 'a', header = False)
+else:
+	splitDf.to_csv('NAME.csv', mode = 'w', header = True)
+
+# Commit data to DB and close connection
+conn.commit()
+conn.close()
