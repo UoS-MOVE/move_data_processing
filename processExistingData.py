@@ -22,7 +22,18 @@ from uuid import UUID
 
 # Import the main webhook file so its functions can be used. 
 import app
-from app import execProcedureNoReturn, execProcedure, dbConnect, split_dataframe_rows, strToUUID
+from app import execProcedureNoReturn, execProcedure, dbConnect, split_dataframe_rows
+
+
+
+# Convert returned strings from the DB into GUID
+def strToUUID(struct):
+	# Remove the leading and trailing characters from the ID
+	struct = struct.replace("[('", "")
+	struct = struct.replace("', )]", "")
+	# Convert trimmed string into a GUID (UUID)
+	return UUID(struct)
+
 
 #SQL Server connection info
 with open("./config/.dbCreds.json") as f:
@@ -45,12 +56,18 @@ conn = dbConnect()
 cursor = conn.cursor()
 
 # Select all the data stored in the old DB form
-#SQL = "SELECT * FROM salfordMove.dbo.sensorData"
+SQL = "SELECT * FROM salfordMove.dbo.sensorData"
 
 # pandas.read_sql_table(table_name, con, schema=None, index_col=None, coerce_float=True, parse_dates=None, columns=None, chunksize=None)
 # 
-oldData = pd.read_sql_table('sensorData', conn, schema="dbo", index_col=None, coerce_float=True, parse_dates=['messageDate'], columns=['sensorID', 'sensorName', 'applicationID', 'networkID', 'dataMessgaeGUID', 'sensorState', 'messageDate', 'rawData', 'dataType', 'dataValue', 'plotValues', 'plotLabels', 'batteryLevel', 'signalStrength', 'pendingChange', 'voltage'], chunksize=None)
+#oldData = pd.read_sql_table('sensorData', conn, schema="dbo", index_col=None, coerce_float=True, parse_dates=['messageDate'], columns=['sensorID', 'sensorName', 'applicationID', 'networkID', 'dataMessgaeGUID', 'sensorState', 'messageDate', 'rawData', 'dataType', 'dataValue', 'plotValues', 'plotLabels', 'batteryLevel', 'signalStrength', 'pendingChange', 'voltage'], chunksize=None)
 
+#row = cursor.execute(SQL).fetchall()
+#for row in cursor.fetchone():
+#	oldData = pd.DataFrame.from
+
+print('Getting data from DB')
+oldData = pd.read_sql(SQL,conn)
 print(oldData)
 
 # Delimeters used in the recieved data
@@ -58,8 +75,8 @@ delimeters = "%2c","|"
 # The columns that need to be split to remove concatonated values
 sensorColumns = ["rawData", "dataValue", "dataType", "plotValues", "plotLabels"]
 # Split the dataframe to move concatonated values to new rows
+print('Splitting DataFrame')
 splitDf = split_dataframe_rows(oldData, sensorColumns, delimeters)
-
 
 
 # Iterate through the fetched data, and convert it to it's normalised form
@@ -74,6 +91,34 @@ for i, sensorData in splitDf.iterrows():
 
 
 	##############
+
+	## CREATE NETWORK ##
+	# Prepare SQL statement to call stored procedure to create a network entry using 
+	# the networkID from the JSON
+	sql = "{CALL [dbo].[PROC_GET_OR_CREATE_NETWORK] (?)}"
+	# Bind the parameters that are required for the procedure to function
+	params = (sensorData['networkID'])
+
+	# Execute the stored procedure to create a network if it doesn't exist, 
+	# and ignore input if exists
+	print('Step 1/10: Creating network entry')
+	execProcedureNoReturn(conn, sql, params)
+	print('Network entry created')
+
+
+	## CREATE APPLICATION ##
+	# Prepare SQL statement to call stored procedure to create an application entry using 
+	# the applicationID from the JSON
+	sql = "{CALL [dbo].[PROC_GET_OR_CREATE_APPLICATION] (?)}"
+	# Bind the applicationID used to check if app exists in DB
+	params = (sensorData['applicationID'])
+
+	# Execute the stored procedure to create an application if it doesn't exist, 
+	# and ignore input if exists
+	print('Step 2/10: Creating application entry')
+	execProcedureNoReturn(conn, sql, params)
+	print('Network application created')
+
 
 	## GET OR CREATE SENSOR ##
 	# pyodbc doesn't support the ".callproc" function from ODBC, 
