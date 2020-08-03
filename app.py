@@ -488,7 +488,7 @@ def webhook():
 
 		# Dump the data to CSV files using the prepared functions
 		## To be disabled for production use ##
-		csvDump('sensorData', sensorMessages)
+		csvDump('sensorData', splitDf)
 		#csvDump('gatewayData', gatewayMessages)
 
 		# Return status 200 (success) to the remote client
