@@ -263,7 +263,7 @@ def split_dataframe_rows(df,column_selectors, delimiters):
 				max_split = len(split_row)
 			
 		for i in range(max_split):
-			print('Splitting row: ' + str(i))
+			#print('Splitting row: ' + str(i))
 			new_row = row.to_dict()
 			for column_selector in column_selectors:
 				try:
