@@ -89,7 +89,7 @@ oldData = pd.read_sql(SQL,conn)
 #oldData = oldData.head(20) # Overrites the dataframe wiht the top 20 entires for quick testing
 
 # Delimeters used in the recieved data
-delimeters = "%2c","|","%7c","%7c0"
+delimeters = "%2c","|","%7c"
 # The columns that need to be split to remove concatonated values
 sensorColumns = ["rawData", "dataValue", "dataType", "plotValues", "plotLabels"]
 # Split the dataframe to move concatonated values to new rows

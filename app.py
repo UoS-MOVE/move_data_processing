@@ -310,7 +310,10 @@ def webhook():
 		#pushSensorData(conn, sensorMessages) # Disabled for testing
 
 		# Delimeters used in the recieved sensor JSON
-		delimeters = "%2c","|","%7c","%7c0"
+		delimeters = "%2c","|","%7c"
+
+		# Solution needed for '%7c0' issue on Light sensors, can't be included in the delimiter list
+
 		# The columns that need to be split to remove concatonated values
 		sensorColumns = ["rawData", "dataValue", "dataType", "plotValues", "plotLabels"]
 		# Split the dataframe to move concatonated values to new rows
