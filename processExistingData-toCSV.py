@@ -26,9 +26,8 @@ import app
 from app import dbConnect, split_dataframe_rows
 
 
-## Variables ##
-
-#SQL Server connection info
+# Variables
+# SQL Server connection info
 with open("./config/.dbCreds.json") as f:
 	dbCreds = json.load(f)
 
@@ -39,17 +38,18 @@ XLSX_DIR = os.getcwd() + '/data/xlsx/'
 SQL_CONN_STR = 'DSN='+dbCreds['SERVER']+';Database='+dbCreds['DATABASE']+';Trusted_Connection=no;UID='+dbCreds['UNAME']+';PWD='+dbCreds['PWD']+';'
 
 
-## Functions ##
+# Functions
+# Filter the data to remove any data that isn't from the MOVE network
 def filterNetwork(pdDF):
 	print('Filtering out unused network data')
 	pdDF = pdDF[splitDf.networkID == 58947]
-	#pdDF = pdDF.drop(columns = ['Unnamed: 0'])
 
 	return pdDF
 
-def splitSensors(pdDF):
-	#writer = pd.ExcelWriter("sensorData.xlsx", engine = 'xlsxwriter')
 
+# Split the data by sensor ID and export the data to separate CSV 
+# 	files and an XLSX file with separate worksheets per sensor
+def splitSensors(pdDF):
 	print('Splitting data by sensor ID')
 
 	print('Sorting Values')
@@ -75,8 +75,7 @@ def splitSensors(pdDF):
 		#writer.save
 
 
-## Main Body ##
-
+# Main Body
 # Create a new DB object
 conn = dbConnect()
 # Create a new cursor from established DB connection
@@ -90,7 +89,7 @@ oldData = pd.read_sql(SQL,conn)
 #oldData = oldData.head(20) # Overrites the dataframe wiht the top 20 entires for quick testing
 
 # Delimeters used in the recieved data
-delimeters = "%2c","|"
+delimeters = "%2c","|","%7c","%7c0"
 # The columns that need to be split to remove concatonated values
 sensorColumns = ["rawData", "dataValue", "dataType", "plotValues", "plotLabels"]
 # Split the dataframe to move concatonated values to new rows

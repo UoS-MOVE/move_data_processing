@@ -21,29 +21,23 @@ import pyodbc
 
 from uuid import UUID
 
-# Import the main webhook file so its functions can be used. 
-import app
+# Import the main webhook file so its functions can be used.
+#import app
 from app import dbConnect, split_dataframe_rows
 
 
 # Varable declarations 
-
-#SQL Server connection info
+# SQL Server connection info
 with open("./config/.dbCreds.json") as f:
 	dbCreds = json.load(f)
 
-
-SERVER = dbCreds['SERVER']
-DATABASE = dbCreds['DATABASE']
-UNAME = dbCreds['UNAME']
-PWD = dbCreds['PWD']
-
 # Formatted connection string for the SQL DB.
-SQL_CONN_STR = 'DSN='+SERVER+';Database='+DATABASE+';Trusted_Connection=no;UID='+UNAME+';PWD='+PWD+';'
+SQL_CONN_STR = 'DSN='+dbCreds['SERVER']+';Database='+dbCreds['DATABASE']+';Trusted_Connection=no;UID='+dbCreds['UNAME']+';PWD='+dbCreds['PWD']+';'
 
 
 # Function definitions
-
+# Converts a returned GUID from the database into a valid GUID by stripping 
+# 	unecessary characters and converting using the UUID library
 def strToUUID(struct):
 	# Remove the leading and trailing characters from the ID
 	struct = struct.replace("[('", "")
@@ -111,7 +105,6 @@ def execProcedureNoReturn(conn, sql, params):
 
 
 # Main body 
-
 # Create a new DB object
 conn = dbConnect()
 # Create a new cursor from established DB connection
@@ -120,11 +113,10 @@ cursor = conn.cursor()
 # Select all the data stored in the old DB form
 SQL = "SELECT * FROM salfordMove.dbo.sensorData"
 oldData = pd.read_sql(SQL,conn)
-#oldData = oldData.head()
-#print(oldData)
+oldData = oldData.head(500) # Used for testing; limits the script to using the top n entries of the dataframe
 
 # Delimeters used in the recieved data
-delimeters = "%2c","|"
+delimeters = "%2c","|","%7c","%7c0"
 # The columns that need to be split to remove concatonated values
 sensorColumns = ["rawData", "dataValue", "dataType", "plotValues", "plotLabels"]
 # Split the dataframe to move concatonated values to new rows
@@ -297,3 +289,7 @@ for i, sensorData in splitDf.iterrows():
 	# create a new voltage entry in the DB.
 	#print('Step 10/10: Creating voltage reading')
 	execProcedureNoReturn(conn, sql, params)
+
+# Commit data to DB and close connection
+conn.commit()
+conn.close()
