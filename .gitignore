@@ -6,4 +6,5 @@ __pycache__
 /data/
 /config/.dbCreds.json
 /config/.postCreds.json
+/config/sensorTypes.txt
 /testing/
