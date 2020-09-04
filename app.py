@@ -40,13 +40,12 @@ with open("./config/.dbCreds.json") as f:
 with open("./config/.postCreds.json") as f:
 	postCreds = json.load(f)
 
-SERVER = dbCreds['SERVER']
-DATABASE = dbCreds['DATABASE']
-UNAME = dbCreds['UNAME']
-PWD = dbCreds['PWD']
-
 # Formatted connection string for the SQL DB.
-SQL_CONN_STR = 'DSN='+SERVER+';Database='+DATABASE+';Trusted_Connection=no;UID='+UNAME+';PWD='+PWD+';'
+SQL_CONN_STR = 'DSN=' + dbCreds['SERVER'] + ';Database=' + dbCreds['DATABASE'] + ';Trusted_Connection=no;UID=' + dbCreds['UNAME'] + ';PWD=' + dbCreds['PWD'] + ';'
+
+# Open file containing the sensor types to look for
+with open('./config/sensorTypes.txt') as f:
+    sensorTypes = f.read().splitlines()
 
 # Flask web server
 app = Flask(__name__)
@@ -252,6 +251,7 @@ def pushSensorData(conn, struct):
 import re
 def split_dataframe_rows(df,column_selectors, delimiters):
 	# we need to keep track of the ordering of the columns
+	print('Splitting rows...')
 	regexPattern = "|".join(map(re.escape,delimiters))
 	def _split_list_to_rows(row,row_accumulator,column_selector,regexPattern):
 		split_rows = {}
@@ -263,7 +263,6 @@ def split_dataframe_rows(df,column_selectors, delimiters):
 				max_split = len(split_row)
 			
 		for i in range(max_split):
-			#print('Splitting row: ' + str(i))
 			new_row = row.to_dict()
 			for column_selector in column_selectors:
 				try:
@@ -276,6 +275,29 @@ def split_dataframe_rows(df,column_selectors, delimiters):
 	df.apply(_split_list_to_rows,axis=1,args = (new_rows,column_selectors,regexPattern))
 	new_df = pd.DataFrame(new_rows, columns=df.columns)
 	return new_df
+
+
+# Monnit data contains trailing values on sensors with more than one measurand, 
+# 	and needs to be processed out before properly splitting.
+# This function should check the name of the sensors for a list of known sensor 
+# 	types and remove the trailing values, sensors with '6' should have their values inverted.
+def rmTrailingValues(df, sensors):
+	print ('Removing trailing values from sensors')
+	for i, data in df:
+		print('Checking for trailing values') 
+		if data['sensorName'].str.contains(sensors):
+			print('Sensor Found')
+			df.at[i, 'rawData'] = df.at[i, 'rawData'][:-4]
+	return df
+
+
+# Multiple networks can be configured on the Monnit system. 
+# This function will filter out unwanted networks by keeping 
+# 	networks with the IDs that are passed to the function.
+def filterNetwork(df, networkID):
+	print('Filtering out unwanted network')
+	df = df[df.networkID == networkID]
+	return df
 
 # Main body
 @app.route('/', methods=['POST'])
@@ -302,7 +324,6 @@ def webhook():
 
 
 		# CONNECT TO DB HERE
-		# conn = dbConnect() # Replaced with helper function
 		conn = getDB()
 
 		# GATEWAY AND SENSOR TO DB HERE - Legacy Database
@@ -320,15 +341,19 @@ def webhook():
 		splitDf = split_dataframe_rows(sensorMessages, sensorColumns, delimeters)
 
 		
+		# Use the Pandas 'loc' function to find and replace pending changes in the dataset
+		splitDf.loc[(splitDf.pendingChange == 'False'), 'pendingChange'] = 0
+		splitDf.loc[(splitDf.pendingChange == 'True'), 'pendingChange'] = 1
+
 		# ADDITIONAL PROCESSING HERE
 		for i, sensorData in splitDf.iterrows():
 			print("Processing sensor message " + str(i) + ".")
 
 			# Convert pendingChange True/False value into a boolean 1/0
 			if sensorData['pendingChange'] == 'False':
-				sensorData['pendingChange'] = 0
+				sensorData.at[i, 'pendingChange'] = 0
 			else:
-				sensorData['pendingChange'] = 1
+				sensorData.at[i, 'pendingChange'] = 1
 
 
 			##############
