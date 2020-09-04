@@ -39,18 +39,22 @@ SQL_CONN_STR = 'DSN='+dbCreds['SERVER']+';Database='+dbCreds['DATABASE']+';Trust
 CSV_DIR = os.getcwd() + '/data/csv/'
 XLSX_DIR = os.getcwd() + '/data/xlsx/'
 
+XLSX_NAME = XLSX_DIR + 'sensorDataSplitPivot.xlsx'
+
+#pivotValues = ['rawData', 'dataValue', 'plotValues']
 pivotValues = ['rawData', 'dataValue', 'plotValues']
-pivotIndex = ['sensorID']
+#pivotIndex = ['sensorID']
+pivotIndex = ['messageDate']
+#pivotColumns = ['sensorID', 'sensorName', 'applicationID', 'networkID', 'sensorState', 'messageDate', 'dataType', 'plotLabels', 'batteryLevel', 'signalStrength', 'pendingChange', 'voltage']
 pivotColumns = ['dataType', 'plotLabels']
-pivotAggFunc = "np.sum"
 
 
 # Functions
 # Filter the data to remove any data that isn't from the MOVE network
-def filterNetwork(pdDF):
+def filterNetwork(df):
 	print('Filtering out unused network data')
-	pdDF = pdDF[splitDf.networkID == 58947]
-	return pdDF
+	df = df[df.networkID == 58947]
+	return df
 
 # Split the data by sensor ID and export the data to separate CSV 
 # 	files and an XLSX file with separate worksheets per sensor
@@ -67,18 +71,25 @@ def sortSensors(df):
 # Pivot passed in DF to make analysis easier. 
 # 'values', 'index', and 'columns', are all lists of variables
 def pivotTable(df, values, index, columns, aggFunc):
-	# convert the pulled data to a pivot table to make analysis easier
+	print('Pivoting data...')
 	#df = pd.pivot_table(df, values=['rawData', 'dataValue', 'plotValues'], index=['sensorID'], columns=['dataType', 'plotLabels'], aggfunc=np.sum)
 	df = pd.pivot_table(df, values=values, index=index, columns=columns, aggfunc=aggFunc)
 	return df 
 
 # Export passed in DF to XLSX files
-def toXLSX(df, sensorID):
-	print('Exporting Sensor data to XLSX')
-	with pd.ExcelWriter(XLSX_DIR + 'sensorDataSplitPivot.xlsx', mode='a') as writer: # pylint: disable=abstract-class-instantiated
-		# Export the data to a single XLSX file with a worksheet per sensor 
-		df.to_excel(writer, sheet_name = str(sensorID))
-		#writer.save
+def toXLSX(df, sensorID, fileName):
+	print('Exporting Sensor data to XLSX...')
+	# Check if file already exists, if it does then append otherwise create it
+	if os.path.exists(XLSX_NAME):
+		print('XLSX file exists, appending...')
+		with pd.ExcelWriter(fileName, engine="openpyxl", mode='a') as writer: # pylint: disable=abstract-class-instantiated
+			# Export the data to a single XLSX file with a worksheet per sensor
+			df.to_excel(writer, sheet_name = str(sensorID))
+	else:
+		print('File does not exist, creating...')
+		with pd.ExcelWriter(fileName, engine="openpyxl") as writer: # pylint: disable=abstract-class-instantiated
+			# Export the data to a single XLSX file with a worksheet per sensor 
+			df.to_excel(writer, sheet_name = str(sensorID))
 
 # Export the data to separate CSV files
 def toCSV(df, sensorID):
@@ -113,18 +124,24 @@ print('Converting Pending Changes')
 splitDf.loc[(splitDf.pendingChange == 'False'), 'pendingChange'] = 0
 splitDf.loc[(splitDf.pendingChange == 'True'), 'pendingChange'] = 1
 
+#print(splitDf)
+
+# Pass the loaded dataframe into a function that will filter out any networks that don't involve MOVE
+filteredDF = filterNetwork(splitDf)
+# Sort the dataframe by sensorID and remove index names
+filteredDF = sortSensors(filteredDF)
+
+#print(filteredDF)
 
 # Split the dataframe into separate dataframes by sensorID
-for i, x in splitDf.groupby('sensorID'):
-	# Pass the loaded dataframe into a function that will filter out any networks that don't involve MOVE
-	filteredDF = filterNetwork(x)
-	# Sort the dataframe by sensorID and remove index names
-	filteredDF = sortSensors(filteredDF)
+for i, x in filteredDF.groupby('sensorID'):
+	#print (x.columns.tolist())
+	#print(x)
 	# Convert the dataframe to a pivot table 
-	filteredDF = pivotTable(filteredDF, pivotValues, pivotIndex, pivotColumns, pivotAggFunc)
+	filteredDF = pivotTable(x, pivotValues, pivotIndex, pivotColumns, np.sum)
 
 	# Export the processed data
-	toXLSX(filteredDF, i)
+	toXLSX(filteredDF, i, XLSX_NAME)
 	toCSV(filteredDF, i)
 
 # Close DB connection
