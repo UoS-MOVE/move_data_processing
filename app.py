@@ -280,14 +280,17 @@ def split_dataframe_rows(df,column_selectors, delimiters):
 # Monnit data contains trailing values on sensors with more than one measurand, 
 # 	and needs to be processed out before properly splitting.
 # This function should check the name of the sensors for a list of known sensor 
-# 	types and remove the trailing values, sensors with '6' should have their values inverted.
+# 	types and remove the trailing values.
 def rmTrailingValues(df, sensors):
 	print ('Removing trailing values from sensors')
-	for i, data in df:
-		print('Checking for trailing values') 
-		if data['sensorName'].str.contains(sensors):
-			print('Sensor Found')
-			df.at[i, 'rawData'] = df.at[i, 'rawData'][:-4]
+
+	# Pre-compile the regex statement for the used sensors using the list of sensors provided via paraeter
+	p = re.compile('|'.join(map(re.escape, sensors)), flags=re.IGNORECASE)
+	# Locate any entries that begin with the sensor names provided in the list 
+	# 	using the prepared regex and remove 4 characters from the raw data variable
+	#df.loc[[bool(p.match(x)) for x in df['sensorName']], ['rawData']] = df['rawData'].str[:-4]
+	df.loc[[bool(p.match(x)) for x in df['sensorName']], ['rawData']] = df.loc[[bool(p.match(x)) for x in df['sensorName']], 'rawData'].str[:-4]
+
 	return df
 
 
@@ -298,6 +301,19 @@ def filterNetwork(df, networkID):
 	print('Filtering out unwanted network')
 	df = df[df.networkID == networkID]
 	return df
+
+
+def aqProcessing(df):
+	df.loc[(df.plotLabels == '?g/m^3|PM1|PM2.5|PM10'), 'dataValue'] = "0|" + df.loc[(df.plotLabels == '?g/m^3|PM1|PM2.5|PM10'), 'dataValue']
+	df.loc[(df.plotLabels == '?g/m^3|PM1|PM2.5|PM10'), 'rawData'] = "0%7c" + df.loc[(df.plotLabels == '?g/m^3|PM1|PM2.5|PM10'), 'rawData']
+	df.loc[(df.dataType == 'Micrograms|Micrograms|Micrograms'), 'dataType'] = 'Micrograms|Micrograms|Micrograms|Micrograms'
+
+	#"rawData": "0%7c2%7c10%7c1%7c6",
+	rawDataList = df.loc[(df.plotLabels == '?g/m^3|PM1|PM2.5|PM10'), 'rawData'][0].split('%7c')
+	df.loc[(df.plotLabels == '?g/m^3|PM1|PM2.5|PM10'), 'rawData'] = str(rawDataList[0]) + '%7c' + str(rawDataList[3]) + '%7c' + str(rawDataList[1]) + '%7c' + str(rawDataList[2])
+	
+	return df
+
 
 # Main body
 @app.route('/', methods=['POST'])
@@ -322,6 +338,26 @@ def webhook():
 		gatewayMessages = json_normalize(gatewayMessages)
 		sensorMessages = json_normalize(sensorMessages)
 
+		# Remove the trailing values present in the rawData field of some sensors
+		sensorMessages = rmTrailingValues(sensorMessages, sensorTypes)
+		# Process any sensor messages for Air Quality
+		sensorMessages = aqProcessing(sensorMessages)
+		
+
+		# Delimeters used in the recieved sensor JSON
+		delimeters = "%2c","|","%7c"
+		# The columns that need to be split to remove concatonated values
+		sensorColumns = ["rawData", "dataValue", "dataType", "plotValues", "plotLabels"]
+		# Split the dataframe to move concatonated values to new rows
+		splitDf = split_dataframe_rows(sensorMessages, sensorColumns, delimeters)
+
+
+		print(splitDf)
+		print(splitDf['rawData'])
+		# Use the Pandas 'loc' function to find and replace pending changes in the dataset
+		splitDf.loc[(splitDf.pendingChange == 'False'), 'pendingChange'] = 0
+		splitDf.loc[(splitDf.pendingChange == 'True'), 'pendingChange'] = 1
+
 
 		# CONNECT TO DB HERE
 		conn = getDB()
@@ -330,30 +366,16 @@ def webhook():
 		#pushGatewayData(conn, gatewayMessages) # Disabled for testing
 		#pushSensorData(conn, sensorMessages) # Disabled for testing
 
-		# Delimeters used in the recieved sensor JSON
-		delimeters = "%2c","|","%7c"
-
-		# Solution needed for '%7c0' issue on Light sensors, can't be included in the delimiter list
-
-		# The columns that need to be split to remove concatonated values
-		sensorColumns = ["rawData", "dataValue", "dataType", "plotValues", "plotLabels"]
-		# Split the dataframe to move concatonated values to new rows
-		splitDf = split_dataframe_rows(sensorMessages, sensorColumns, delimeters)
-
-		
-		# Use the Pandas 'loc' function to find and replace pending changes in the dataset
-		splitDf.loc[(splitDf.pendingChange == 'False'), 'pendingChange'] = 0
-		splitDf.loc[(splitDf.pendingChange == 'True'), 'pendingChange'] = 1
 
 		# ADDITIONAL PROCESSING HERE
 		for i, sensorData in splitDf.iterrows():
 			print("Processing sensor message " + str(i) + ".")
 
 			# Convert pendingChange True/False value into a boolean 1/0
-			if sensorData['pendingChange'] == 'False':
-				sensorData.at[i, 'pendingChange'] = 0
-			else:
-				sensorData.at[i, 'pendingChange'] = 1
+			#if sensorData['pendingChange'] == 'False':
+			#	sensorData.at[i, 'pendingChange'] = 0
+			#else:
+			#	sensorData.at[i, 'pendingChange'] = 1
 
 
 			##############
