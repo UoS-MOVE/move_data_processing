@@ -24,10 +24,14 @@ from uuid import UUID
 
 # Import the main webhook file so its functions can be used. 
 import app
-from app import dbConnect, split_dataframe_rows, rmTrailingValues, filterNetwork
+from app import dbConnect, split_dataframe_rows, rmTrailingValues, filterNetwork, aqProcessing
 
 
 # Variables
+# Open file containing the sensor types to look for
+with open('./config/sensorTypes.txt') as f:
+    sensorTypes = f.read().splitlines()
+
 # SQL Server connection info
 with open("./config/.dbCreds.json") as f:
 	dbCreds = json.load(f)
@@ -42,19 +46,15 @@ XLSX_DIR = os.getcwd() + '/data/xlsx/'
 XLSX_NAME = XLSX_DIR + 'sensorDataSplitPivot.xlsx'
 
 #pivotValues = ['rawData', 'dataValue', 'plotValues']
-pivotValues = ['rawData', 'dataValue', 'plotValues']
+pivotValues = ['rawData', 'dataValue', 'plotValues', 'plotLabels']
 #pivotIndex = ['sensorID']
 pivotIndex = ['messageDate']
 #pivotColumns = ['sensorID', 'sensorName', 'applicationID', 'networkID', 'sensorState', 'messageDate', 'dataType', 'plotLabels', 'batteryLevel', 'signalStrength', 'pendingChange', 'voltage']
-pivotColumns = ['dataType', 'plotLabels']
+#pivotColumns = ['dataType', 'plotLabels']
+pivotColumns = ['dataType']
 
 
 # Functions
-# Filter the data to remove any data that isn't from the MOVE network
-def filterNetwork(df):
-	print('Filtering out unused network data')
-	df = df[df.networkID == 58947]
-	return df
 
 # Split the data by sensor ID and export the data to separate CSV 
 # 	files and an XLSX file with separate worksheets per sensor
@@ -110,6 +110,9 @@ SQL = "SELECT TOP(200) * FROM salfordMove.dbo.sensorData"
 print('Getting data from DB')
 oldData = pd.read_sql(SQL,conn)
 
+oldData = aqProcessing(oldData)
+oldData = rmTrailingValues(oldData, sensorTypes)
+
 # Delimeters used in the recieved data
 delimeters = "%2c","|","%7c"
 # The columns that need to be split to remove concatonated values
@@ -135,14 +138,17 @@ filteredDF = sortSensors(filteredDF)
 
 # Split the dataframe into separate dataframes by sensorID
 for i, x in filteredDF.groupby('sensorID'):
-	#print (x.columns.tolist())
-	#print(x)
+	# Export the un-pivoted data
+	with pd.ExcelWriter(XLSX_DIR + 'sensorData.xlsx', engine="openpyxl") as writer: # pylint: disable=abstract-class-instantiated
+		# Export the data to a single XLSX file with a worksheet per sensor 
+		x.to_excel(writer, sheet_name = str(i))
+	
 	# Convert the dataframe to a pivot table 
-	filteredDF = pivotTable(x, pivotValues, pivotIndex, pivotColumns, np.sum)
+	processedDF = pivotTable(x, pivotValues, pivotIndex, pivotColumns, np.sum)
 
 	# Export the processed data
-	toXLSX(filteredDF, i, XLSX_NAME)
-	toCSV(filteredDF, i)
+	toXLSX(processedDF, i, XLSX_NAME)
+	#toCSV(processedDF, i)
 
 # Close DB connection
 conn.close()
