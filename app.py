@@ -32,13 +32,13 @@ JSON_NAME = 'monnit_' + str(datetime.datetime.now()) + '.json'
 CSV_DIR = os.getcwd() + '/data/csv/'
 JSON_DIR = os.getcwd() + '/data/json/'
 
-#SQL Server connection info
-with open("./config/.dbCreds.json") as f:
-	dbCreds = json.load(f)
-
 #POST credentials info
 with open("./config/.postCreds.json") as f:
 	postCreds = json.load(f)
+
+#SQL Server connection info
+with open("./config/.dbCreds.json") as f:
+	dbCreds = json.load(f)
 
 # Formatted connection string for the SQL DB.
 SQL_CONN_STR = 'DSN=' + dbCreds['SERVER'] + ';Database=' + dbCreds['DATABASE'] + ';Trusted_Connection=no;UID=' + dbCreds['UNAME'] + ';PWD=' + dbCreds['PWD'] + ';'
@@ -170,80 +170,6 @@ def execProcedureNoReturn(conn, sql, params):
 		abort(500)
 
 
-def pushGatewayData(conn, struct):
-	print('Push gateway data')
-
-	# Create a new cursor from the connection object
-	cursor = conn.cursor()
-
-	# Push gateway data to the database
-	for i, x in struct.iterrows():
-		print("Pushing gateway message " + str(i) + " to the database.")
-		dbTable = "dbo.gatewayData"
-		columns = "(gatewayID, gatewayName, accountID, networkID, messageType, gatewayPower, batteryLevel, gatewayDate, gatewayCount, signalStrength, pendingChange)"
-
-		# Convert pendingChange True/False value into a boolean 1/0
-		if x['pendingChange'] == 'False':
-			pendingChange = 0
-		else:
-			pendingChange = 1
-
-		try:
-			# Execute query on database
-			cursor.execute("INSERT INTO " + dbTable + columns + " VALUES (" + str(x['gatewayID']) + ",'" + str(x['gatewayName']) + "'," + str(x['accountID']) + "," + str(x['networkID']) + "," + str(x['messageType']) + "," + str(x['gatewayPower']) + "," + str(x['batteryLevel']) + ",'" + str(x['gatewayDate']) + "'," + str(x['gatewayCount']) + "," + str(x['signalStrength']) + "," + str(pendingChange) + ")")
-			#cursor.execute("INSERT INTO " + dbTable + columns + " values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", [gatewayID, "'"gatewayName"'", accountID, messageType, gatewayPower, batteryLevel, datetime.date(gatewayDate), gatewayCount, signalStrength, pendingChange])
-			conn.commit()
-
-		except pyodbc.Error as e:
-			sqlstate = e.args[1]
-
-			# Close cursor
-			cursor.close()
-
-			# Print error is one should occur and raise an exception
-			print("An error occurred inserting gateway data to database: " + sqlstate)
-			abort(500)
-
-def pushSensorData(conn, struct):
-	print('Push sensor data')
-
-	# Create a new cursor from the connection object
-	cursor = conn.cursor()
-
-	# Push sensor data to the database
-	for i, x in struct.iterrows():
-		print("Pushing sensor message " + str(i) + " to the database.")
-		dbTable = "dbo.sensorData"
-		columns = "(sensorID, sensorName, applicationID, networkID, dataMessageGUID, sensorState, messageDate, rawData, dataType, dataValue, plotValues, plotLabels, batteryLevel, signalStrength, pendingChange, voltage)"
-
-		# Convert pendingChange True/False value into a boolean 1/0
-		if x['pendingChange'] == 'False':
-			pendingChange = 0
-		else:
-			pendingChange = 1
-
-		try:
-			# Execute query on database
-			cursor.execute("INSERT INTO " + dbTable + columns + " VALUES (" + str(x['sensorID']) + ",'" + str(x['sensorName']) + "'," + str(x['applicationID']) + "," + str(x['networkID']) + ",'" + str(x['dataMessageGUID']) + "'," + str(x['sensorState']) + ",'" + str(x['messageDate']) + "','" + str(x['rawData']) + "','" + str(x['dataType']) + "','" + str(x['dataValue']) + "','" + str(x['plotValues']) + "','" + str(x['plotLabels']) + "'," + str(x['batteryLevel']) + "," + str(x['signalStrength']) + ',' + str(pendingChange) + ',' + str(x['sensorVoltage']) + ")")
-			#cursor.execute("INSERT INTO " + dbTable + columns + " values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", [sensorID, "'"sensorName"'", applicationID, networkID, "'"dataMessageGUID"'", sensorState, datetime.date(messageDate), "'"rawData"'", "'"dataType"'", "'"dataValue"'", "'"plotValues"'", "'"plotLabels"'", batteryLevel, signalStrength, pendingChange])
-			conn.commit()
-
-		except pyodbc.Error as e:
-			sqlstate = e.args[1]
-
-			# Close cursor and database connection
-
-			cursor.close()
-
-			# Print error is one should occur and raise an exception
-			print("An error occurred inserting sensor data to database: " + sqlstate)
-			abort(500)
-
-	# Close cursor and database connection
-	cursor.close()
-
-
-
 # Function for splitting dataframes with concatonated values into multiple rows
 # Solution provided by user: zouweilin
 # Solution link: https://gist.github.com/jlln/338b4b0b55bd6984f883
@@ -304,14 +230,23 @@ def filterNetwork(df, networkID):
 
 
 def aqProcessing(df):
+	# Add an additional '0' to dataValue and rawData columns to preserve varible ordering when the variable is split
 	df.loc[(df.plotLabels == '?g/m^3|PM1|PM2.5|PM10'), 'dataValue'] = "0|" + df.loc[(df.plotLabels == '?g/m^3|PM1|PM2.5|PM10'), 'dataValue']
 	df.loc[(df.plotLabels == '?g/m^3|PM1|PM2.5|PM10'), 'rawData'] = "0%7c" + df.loc[(df.plotLabels == '?g/m^3|PM1|PM2.5|PM10'), 'rawData']
+	# Add another occurance of 'Micrograms' to the dataType column to prevent Null entries upon splitting the dataframe. 
 	df.loc[(df.dataType == 'Micrograms|Micrograms|Micrograms'), 'dataType'] = 'Micrograms|Micrograms|Micrograms|Micrograms'
 
-	#"rawData": "0%7c2%7c10%7c1%7c6",
-	rawDataList = df.loc[(df.plotLabels == '?g/m^3|PM1|PM2.5|PM10'), 'rawData'][0].split('%7c')
-	df.loc[(df.plotLabels == '?g/m^3|PM1|PM2.5|PM10'), 'rawData'] = str(rawDataList[0]) + '%7c' + str(rawDataList[3]) + '%7c' + str(rawDataList[1]) + '%7c' + str(rawDataList[2])
+	# Create a dataframe from Air Quality entries
+	includedColumns = df.loc[df['plotLabels']=='?g/m^3|PM1|PM2.5|PM10']
+	for i, x in includedColumns.iterrows():
+		# Split the data so it can be re-rodered
+		rawDataList = x.rawData.split('%7c')
+		# Re-order the processed data into the proper order (PM1, 2.5, 10) and insert the original split delimiter
+		includedColumns.loc[i, 'rawData'] = str(rawDataList[0]) + '%7c' + str(rawDataList[3]) + '%7c' + str(rawDataList[1]) + '%7c' + str(rawDataList[2])
 	
+	# Overrite the air quality data with the modified data that re-orders the variables 
+	df = includedColumns.combine_first(df)
+
 	return df
 
 
@@ -352,8 +287,6 @@ def webhook():
 		splitDf = split_dataframe_rows(sensorMessages, sensorColumns, delimeters)
 
 
-		print(splitDf)
-		print(splitDf['rawData'])
 		# Use the Pandas 'loc' function to find and replace pending changes in the dataset
 		splitDf.loc[(splitDf.pendingChange == 'False'), 'pendingChange'] = 0
 		splitDf.loc[(splitDf.pendingChange == 'True'), 'pendingChange'] = 1
@@ -362,21 +295,10 @@ def webhook():
 		# CONNECT TO DB HERE
 		conn = getDB()
 
-		# GATEWAY AND SENSOR TO DB HERE - Legacy Database
-		#pushGatewayData(conn, gatewayMessages) # Disabled for testing
-		#pushSensorData(conn, sensorMessages) # Disabled for testing
-
 
 		# ADDITIONAL PROCESSING HERE
 		for i, sensorData in splitDf.iterrows():
 			print("Processing sensor message " + str(i) + ".")
-
-			# Convert pendingChange True/False value into a boolean 1/0
-			#if sensorData['pendingChange'] == 'False':
-			#	sensorData.at[i, 'pendingChange'] = 0
-			#else:
-			#	sensorData.at[i, 'pendingChange'] = 1
-
 
 			##############
 
