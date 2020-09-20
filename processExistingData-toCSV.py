@@ -18,7 +18,7 @@ import os
 import traceback
 import datetime
 
-import pyodbc
+#import pyodbc
 
 from uuid import UUID
 
@@ -110,7 +110,9 @@ SQL = "SELECT TOP(200) * FROM salfordMove.dbo.sensorData"
 print('Getting data from DB')
 oldData = pd.read_sql(SQL,conn)
 
+print('Pre-processing AQ Sensor Data')
 oldData = aqProcessing(oldData)
+print('Removing trailing integers')
 oldData = rmTrailingValues(oldData, sensorTypes)
 
 # Delimeters used in the recieved data
@@ -121,20 +123,16 @@ sensorColumns = ["rawData", "dataValue", "dataType", "plotValues", "plotLabels"]
 print('Splitting DataFrame')
 splitDf = split_dataframe_rows(oldData, sensorColumns, delimeters)
 
-
 # Use the Pandas 'loc' function to find and replace pending changes in the dataset
 print('Converting Pending Changes')
 splitDf.loc[(splitDf.pendingChange == 'False'), 'pendingChange'] = 0
 splitDf.loc[(splitDf.pendingChange == 'True'), 'pendingChange'] = 1
 
-#print(splitDf)
-
 # Pass the loaded dataframe into a function that will filter out any networks that don't involve MOVE
-filteredDF = filterNetwork(splitDf)
+filteredDF = filterNetwork(splitDf, 58947)
 # Sort the dataframe by sensorID and remove index names
 filteredDF = sortSensors(filteredDF)
 
-#print(filteredDF)
 
 # Split the dataframe into separate dataframes by sensorID
 for i, x in filteredDF.groupby('sensorID'):
