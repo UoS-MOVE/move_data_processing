@@ -242,7 +242,7 @@ def aqProcessing(df):
 		# Split the data so it can be re-rodered
 		rawDataList = x.rawData.split('%7c')
 		# Re-order the processed data into the proper order (PM1, 2.5, 10) and insert the original split delimiter
-		includedColumns.loc[i, 'rawData'] = str(rawDataList[0]) + '%7c' + str(rawDataList[3]) + '%7c' + str(rawDataList[1]) + '%7c' + str(rawDataList[2])
+		includedColumns.loc[i, 'rawData'] = str(rawDataList[0]) + '%7c' + str(rawDataList[3]) + '%7c' + str(rawDataList[1]) + '%7c' + str(rawDataList[2]) + '%7c' + str(rawDataList[4])
 	
 	# Overrite the air quality data with the modified data that re-orders the variables 
 	df = includedColumns.combine_first(df)
@@ -256,6 +256,7 @@ def aqProcessing(df):
 # Primary (main) function
 def webhook():
 	print("webhook"); sys.stdout.flush()
+	# TODO: #1 Replace authent system with basic auth, header auth isn't ideal
 	if request.method == 'POST' and request.headers['uname'] == postCreds['UNAME'] and request.headers['pwd'] == postCreds['PWD']:
 		print('Request Authenticated & JSON Recieved')
 
