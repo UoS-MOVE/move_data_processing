@@ -92,6 +92,7 @@ def dbConnect():
 		print("An error occurred connecting to the database: " + sqlstate)
 		abort(500)
 	else:
+		print("Connected to database. Proceeding")
 		return cnxn
 
 # Helper function to get DB and return it to the 
