@@ -48,7 +48,14 @@ print("Loading XLSX file")
 xls = pd.ExcelFile(os.getcwd() + "/data/get/SensorData.xlsx", engine = "openpyxl")
 xlsxDict = pd.read_excel(xls, sheet_name = None, engine = "openpyxl")
 
-for i, x in xlsxDict:
+#xlsxDF = pd.DataFrame.from_dict(xlsxDict)
+
+print(xlsxDict)
+print(xlsxDict.keys())
+#print(xlsxDF)
+print('Pause')
+
+for i in xlsxDict.keys():
 	oldData = pd.read_excel(xls, sheet_name = i, engine = "openpyxl")
 
 	oldData = oldData.head(500) # Used for testing; limits the script to using the top n entries of the dataframe
