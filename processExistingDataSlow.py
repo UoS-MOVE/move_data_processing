@@ -23,10 +23,14 @@ from uuid import UUID
 
 # Import the main webhook file so its functions can be used.
 #import app
-from app import dbConnect, split_dataframe_rows
+from app import dbConnect, split_dataframe_rows, rmTrailingValues, filterNetwork, aqProcessing
 
 
 # Varable declarations 
+# Open file containing the sensor types to look for
+with open('./config/sensorTypes.txt') as f:
+    sensorTypes = f.read().splitlines()
+
 # SQL Server connection info
 with open("./config/.dbCreds.json") as f:
 	dbCreds = json.load(f)
@@ -114,6 +118,11 @@ cursor = conn.cursor()
 SQL = "SELECT * FROM salfordMove.dbo.sensorData"
 oldData = pd.read_sql(SQL,conn)
 oldData = oldData.head(500) # Used for testing; limits the script to using the top n entries of the dataframe
+
+print('Pre-processing AQ Sensor Data')
+oldData = aqProcessing(oldData)
+print('Removing trailing integers')
+oldData = rmTrailingValues(oldData, sensorTypes)
 
 # Delimeters used in the recieved data
 delimeters = "%2c","|","%7c0","%7c"
