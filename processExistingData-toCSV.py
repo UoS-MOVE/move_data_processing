@@ -10,13 +10,15 @@
 
 
 # Import libraries
-import sys
+#import sys
 import json
 import pandas as pd
 import numpy as np
 import os
-import traceback
-import datetime
+#import traceback
+#import datetime
+
+import re
 
 #import pyodbc
 
@@ -45,25 +47,23 @@ XLSX_DIR = os.getcwd() + '/data/xlsx/'
 
 XLSX_NAME = XLSX_DIR + 'sensorDataSplitPivot.xlsx'
 
-#pivotValues = ['rawData', 'dataValue', 'plotValues']
-pivotValues = ['rawData', 'dataValue', 'plotValues', 'plotLabels']
-#pivotIndex = ['sensorID']
+
+pivotValues = ['rawData', 'dataValue', 'plotValues']
 pivotIndex = ['messageDate']
-#pivotColumns = ['sensorID', 'sensorName', 'applicationID', 'networkID', 'sensorState', 'messageDate', 'dataType', 'plotLabels', 'batteryLevel', 'signalStrength', 'pendingChange', 'voltage']
+pivotColumns = ['dataType', 'plotLabels', 'sensorName']
 #pivotColumns = ['dataType', 'plotLabels']
-pivotColumns = ['dataType']
 
 
 # Functions
 
 # Split the data by sensor ID and export the data to separate CSV 
 # 	files and an XLSX file with separate worksheets per sensor
-def sortSensors(df):
+def sortSensors(df, col):
 	print('Sorting and cleaning sensors')
 	# Sort the values in the dataframe by their sensor ID
-	df.sort_values(by = ['sensorID'], inplace = True)
+	df.sort_values(by = [col], inplace = True)
 	# Set the DF index to the sensor IDs
-	df.set_index(keys = ['sensorID'], drop = False, inplace = True)
+	df.set_index(keys = [col], drop = False, inplace = True)
 	# Remove existing index names
 	df.index.name = None
 	return df
@@ -77,19 +77,23 @@ def pivotTable(df, values, index, columns, aggFunc):
 	return df 
 
 # Export passed in DF to XLSX files
-def toXLSX(df, sensorID, fileName):
+def toXLSX(df, pName, fileName):
 	print('Exporting Sensor data to XLSX...')
+
+	# Strip any invalid characters from the sheet name
+	''.join(e for e in str(pName) if e.isalnum())
+	
 	# Check if file already exists, if it does then append otherwise create it
 	if os.path.exists(XLSX_NAME):
 		print('XLSX file exists, appending...')
 		with pd.ExcelWriter(fileName, engine="openpyxl", mode='a') as writer: # pylint: disable=abstract-class-instantiated
 			# Export the data to a single XLSX file with a worksheet per sensor
-			df.to_excel(writer, sheet_name = str(sensorID))
+			df.to_excel(writer, sheet_name = str(pName))
 	else:
 		print('File does not exist, creating...')
 		with pd.ExcelWriter(fileName, engine="openpyxl") as writer: # pylint: disable=abstract-class-instantiated
 			# Export the data to a single XLSX file with a worksheet per sensor 
-			df.to_excel(writer, sheet_name = str(sensorID))
+			df.to_excel(writer, sheet_name = str(pName))
 
 # Export the data to separate CSV files
 def toCSV(df, sensorID):
@@ -105,7 +109,8 @@ conn = dbConnect()
 cursor = conn.cursor()
 
 # Select all the data stored in the old DB form
-SQL = "SELECT TOP(200) * FROM salfordMove.dbo.sensorData"
+#SQL = "SELECT TOP(2000) * FROM salfordMove.dbo.sensorData"
+SQL = "SELECT * FROM salfordMove.dbo.sensorData"
 
 print('Getting data from DB')
 oldData = pd.read_sql(SQL,conn)
@@ -131,8 +136,7 @@ splitDf.loc[(splitDf.pendingChange == 'True'), 'pendingChange'] = 1
 # Pass the loaded dataframe into a function that will filter out any networks that don't involve MOVE
 filteredDF = filterNetwork(splitDf, 58947)
 # Sort the dataframe by sensorID and remove index names
-filteredDF = sortSensors(filteredDF)
-
+filteredDF = sortSensors(filteredDF, 'sensorID')
 
 # Split the dataframe into separate dataframes by sensorID
 for i, x in filteredDF.groupby('sensorID'):
