@@ -58,7 +58,7 @@ def strToUUID(struct):
 
 
 # Executes a Stored Procedure in the database to get or create data
-def execProcedureFast(conn, sql, params):
+def execProcedure(conn, sql, params):
 	# Create new cursor from existing connection 
 	cursor = conn.cursor()
 	cursor.fast_executemany = True
@@ -96,7 +96,7 @@ def execProcedureFast(conn, sql, params):
 
 
 # Executes a Stored Procedure in the database to create data without returning any values 
-def execProcedureNoReturnFast(conn, sql, params):
+def execProcedureNoReturn(conn, sql, params):
 	# Create new cursor from existing connection 
 	cursor = conn.cursor()
 	cursor.fast_executemany = True
@@ -171,7 +171,7 @@ params = list(params.itertuples(index=False))
 # Execute the stored procedure to create a network if it doesn't exist, 
 # and ignore input if exists
 print('Step 1/10: Creating network entry')
-execProcedureNoReturnFast(conn, sql, params)
+execProcedureNoReturn(conn, sql, params)
 print('Network entry created')
 
 
@@ -186,7 +186,7 @@ params = list(params.itertuples(index=False))
 # Execute the stored procedure to create an application if it doesn't exist, 
 # and ignore input if exists
 print('Step 2/10: Creating application entry')
-execProcedureNoReturnFast(conn, sql, params)
+execProcedureNoReturn(conn, sql, params)
 print('Network application created')
 
 
@@ -210,7 +210,7 @@ params = list(params.itertuples(index=False))
 print('Step 3/10: Creating or getting sensor')
 # Execute the procedure and return sensorID and convert trimmed string into a GUID (UUID)
 #sensorData['sensorID'] = strToUUID(execProcedureFast(conn, sql, params))
-splitDf['sensorID'] = execProcedureFast(conn, sql, params)
+splitDf['sensorID'] = execProcedure(conn, sql, params)
 print(splitDf['sensorID'])
 splitDf['sensorID'] = strToUUID(splitDf['sensorID'])
 
@@ -232,7 +232,7 @@ params = list(params.itertuples(index=False))
 # Execute the procedure using the prepared SQL & parameters to 
 # create a new sensor in the DB, or get an existing one.
 print('Step 4/10: Creating or getting data type ID')
-splitDf['dataTypeID'] = strToUUID(execProcedureFast(conn, sql, params))
+splitDf['dataTypeID'] = strToUUID(execProcedure(conn, sql, params))
 print(splitDf['dataTypeID'])
 
 
@@ -251,7 +251,7 @@ params = list(params.itertuples(index=False))
 # Execute the procedure using the prepared SQL & parameters to 
 # create a new plot label in the DB, or get an existing one.
 print('Step 5/10: Creating or getting plot label ID')
-splitDf['plotLabelID'] = strToUUID(execProcedureFast(conn, sql, params)) ## Problem here?
+splitDf['plotLabelID'] = strToUUID(execProcedure(conn, sql, params)) ## Problem here?
 
 
 ## GET OR CREATE READING ##
@@ -270,7 +270,7 @@ params = list(params.itertuples(index=False))
 # Execute the procedure using the prepared SQL & parameters to 
 # create a new reading in the DB, and return the genreated ID.
 print('Step 6/10: Creating reading, and getting ID')
-splitDf['readingID'] = strToUUID(execProcedureFast(conn, sql, params))
+splitDf['readingID'] = strToUUID(execProcedure(conn, sql, params))
 
 
 ## GET OR CREATE SIGNAL STATUS ##
@@ -285,7 +285,7 @@ params = list(params.itertuples(index=False))
 # Execute the procedure using the prepared SQL & parameters to 
 # create a new signal status in the DB.
 print('Step 7/10: Creating signal atatus')
-execProcedureNoReturnFast(conn, sql, params)
+execProcedureNoReturn(conn, sql, params)
 
 
 ## GET OR CREATE BATTERY STATUS ##
@@ -299,7 +299,7 @@ params = list(params.itertuples(index=False))
 # Execute the procedure using the prepared SQL & parameters to 
 # create a new battery status in the DB.
 print('Step 8/10: Creating battery status')
-execProcedureNoReturnFast(conn, sql, params)
+execProcedureNoReturn(conn, sql, params)
 
 
 ## GET OR CREATE PENDING CHANGES ##
@@ -314,7 +314,7 @@ params = list(params.itertuples(index=False))
 # Execute the procedure using the prepared SQL & parameters to 
 # create a new pending change in the DB.
 print('Step 9/10: Creating pending change')
-execProcedureNoReturnFast(conn, sql, params)
+execProcedureNoReturn(conn, sql, params)
 
 
 ## GET OR CREATE SENSOR VOLTAGE ##
@@ -329,7 +329,7 @@ params = list(params.itertuples(index=False))
 # Execute the procedure using the prepared SQL & parameters to 
 # create a new voltage entry in the DB.
 print('Step 10/10: Creating voltage reading')
-execProcedureNoReturnFast(conn, sql, params)
+execProcedureNoReturn(conn, sql, params)
 
 
 # Check if CSV exists, create if it doesn't

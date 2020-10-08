@@ -81,7 +81,6 @@ def strToUUID(struct):
 
 # Function for establishing a connection to the database
 def dbConnect():
-	print('dbConnect')
 	try:
 		print('Connecting to database...')
 		# Create a new connection to the SQL Server using the prepared connection string
@@ -92,6 +91,7 @@ def dbConnect():
 		print("An error occurred connecting to the database: " + sqlstate)
 		abort(500)
 	else:
+		print("Connected to database. Proceeding")
 		return cnxn
 
 # Helper function to get DB and return it to the 

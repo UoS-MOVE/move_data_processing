@@ -26,11 +26,10 @@ from uuid import UUID
 from app import dbConnect, split_dataframe_rows, rmTrailingValues, filterNetwork, aqProcessing
 
 
-# Varable declarations
+# Varable declarations 
 # Open file containing the sensor types to look for
 with open('./config/sensorTypes.txt') as f:
     sensorTypes = f.read().splitlines()
-
 
 # SQL Server connection info
 with open("./config/.dbCreds.json") as f:
@@ -120,6 +119,11 @@ SQL = "SELECT TOP(200) FROM salfordMove.dbo.sensorData"
 oldData = pd.read_sql(SQL,conn)
 
 oldData = aqProcessing(oldData)
+oldData = rmTrailingValues(oldData, sensorTypes)
+
+print('Pre-processing AQ Sensor Data')
+oldData = aqProcessing(oldData)
+print('Removing trailing integers')
 oldData = rmTrailingValues(oldData, sensorTypes)
 
 # Delimeters used in the recieved data
