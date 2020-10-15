@@ -174,6 +174,7 @@ def execProcedureNoReturn(conn, sql, params):
 # Solution provided by user: zouweilin
 # Solution link: https://gist.github.com/jlln/338b4b0b55bd6984f883
 # Modified to use a delimeter regex pattern, so rows can be split using different delimeters
+# TODO: #2 Fix 'pop from empty stack' error while parsing through sensors without a split 
 import re
 def split_dataframe_rows(df,column_selectors, delimiters):
 	# we need to keep track of the ordering of the columns
@@ -215,7 +216,7 @@ def rmTrailingValues(df, sensors):
 	# Locate any entries that begin with the sensor names provided in the list 
 	# 	using the prepared regex and remove 4 characters from the raw data variable
 	#df.loc[[bool(p.match(x)) for x in df['sensorName']], ['rawData']] = df['rawData'].str[:-4]
-	df.loc[[bool(p.match(x)) for x in df['sensorName']], ['rawData']] = df.loc[[bool(p.match(x)) for x in df['sensorName']], 'rawData'].str[:-4]
+	df.loc[[bool(p.match(x)) for x in df['sensorName']], ['rawData']] = df.loc[[bool(p.match(x)) for x in df['sensorName']], 'rawData'].astype('str').str[:-4]
 
 	return df
 
