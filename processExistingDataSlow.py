@@ -126,7 +126,7 @@ if __name__ == '__main__':
 	oldData = rmTrailingValues(oldData, sensorTypes)
 
 	# Delimeters used in the recieved data
-	delimeters = "%2c","|","%7c0","%7c"
+	delimeters = "%2c","|","%7c"
 	# The columns that need to be split to remove concatonated values
 	sensorColumns = ["rawData", "dataValue", "dataType", "plotValues", "plotLabels"]
 	# Split the dataframe to move concatonated values to new rows

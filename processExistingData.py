@@ -136,7 +136,7 @@ oldData = oldData.head()
 print(oldData)
 
 # Delimeters used in the recieved data
-delimeters = "%2c","|"
+delimeters = "%2c","|","%7c"
 # The columns that need to be split to remove concatonated values
 sensorColumns = ["rawData", "dataValue", "dataType", "plotValues", "plotLabels"]
 # Split the dataframe to move concatonated values to new rows
