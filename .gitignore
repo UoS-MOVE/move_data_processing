@@ -3,3 +3,7 @@ __pycache__
 .hookVenv
 .vscode
 .dbCreds
+/data/
+/config/*.json
+/config/*.txt
+/testing/
