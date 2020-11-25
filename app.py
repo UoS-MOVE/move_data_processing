@@ -14,6 +14,7 @@
 import sys
 from flask import Flask, request, abort, current_app, g
 from flask.cli import with_appcontext
+from flask_basicauth import BasicAuth
 import json
 import pandas as pd
 import os
@@ -50,6 +51,13 @@ with open('./config/sensorTypes.txt') as f:
 # Flask web server
 app = Flask(__name__)
 
+app.config['BASIC_AUTH_USERNAME'] = postCreds['UNAME']
+app.config['BASIC_AUTH_PASSWORD'] = postCreds['PWD']
+
+app.config['BASIC_AUTH_FORCE'] = True
+
+basic_auth = BasicAuth(app)
+
 
 # Function to save the recieved JSON file to disk
 def jsonDump(struct):
@@ -63,7 +71,7 @@ def jsonDump(struct):
 def csvDump(fileName, struct):
 	print('CSV Dump')
 	if os.path.exists(CSV_DIR + fileName + '.csv'):
-		with open(CSV_DIR + fileName + '.csv', 'a') as fd:
+		with open(CSV_DIR + fileName + '.csv', 'a', encoding="utf-8") as fd:
 			struct.to_csv(fd, header=False, index=False)
 	else:
 		struct.to_csv(CSV_DIR + fileName + '.csv', index=False)
@@ -231,6 +239,7 @@ def filterNetwork(df, networkID):
 
 
 def aqProcessing(df):
+	print("Processing AQ sensor data")
 	# Add an additional '0' to dataValue and rawData columns to preserve varible ordering when the variable is split
 	df.loc[(df.plotLabels == '?g/m^3|PM1|PM2.5|PM10'), 'dataValue'] = "0|" + df.loc[(df.plotLabels == '?g/m^3|PM1|PM2.5|PM10'), 'dataValue']
 	df.loc[(df.plotLabels == '?g/m^3|PM1|PM2.5|PM10'), 'rawData'] = "0%7c" + df.loc[(df.plotLabels == '?g/m^3|PM1|PM2.5|PM10'), 'rawData']
@@ -243,8 +252,8 @@ def aqProcessing(df):
 		# Split the data so it can be re-rodered
 		rawDataList = x.rawData.split('%7c')
 		# Re-order the processed data into the proper order (PM1, 2.5, 10) and insert the original split delimiter
-		includedColumns.loc[i, 'rawData'] = str(rawDataList[0]) + '%7c' + str(rawDataList[3]) + '%7c' + str(rawDataList[1]) + '%7c' + str(rawDataList[2]) + '%7c' + str(rawDataList[4])
-	
+		includedColumns.loc[i, 'rawData'] = str(rawDataList[0]) + '%7c' + str(rawDataList[3]) + '%7c' + str(rawDataList[1]) + '%7c' + str(rawDataList[2])
+			
 	# Overrite the air quality data with the modified data that re-orders the variables 
 	df = includedColumns.combine_first(df)
 
@@ -253,12 +262,11 @@ def aqProcessing(df):
 
 # Main body
 @app.route('/', methods=['POST'])
-
+@basic_auth.required
 # Primary (main) function
 def webhook():
 	print("webhook"); sys.stdout.flush()
-	# TODO: #1 Replace authent system with basic auth, header auth isn't ideal
-	if request.method == 'POST' and request.headers['uname'] == postCreds['UNAME'] and request.headers['pwd'] == postCreds['PWD']:
+	if request.method == 'POST':
 		print('Request Authenticated & JSON Recieved')
 
 		# Store the recieved JSON file from the request 
@@ -473,12 +481,12 @@ def webhook():
 		return '', 200
 
 
-	elif request.method == 'POST' and request.headers['uname'] != postCreds['UNAME'] and request.headers['pwd'] != postCreds['PWD']:
-		print('Authentication Failed')
-		abort(400)
+	elif request.method != 'POST':
+		print('Expected POST, got: ' + str(request.method))
+		abort(405)
 	else:
 		print('Invalid Response')
-		abort(400)
+		abort(418)
 
 if __name__ == '__main__':
 	app.run(host= '0.0.0.0', port = '80')
