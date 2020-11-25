@@ -79,6 +79,7 @@ oldData.rename(columns = {'state':'sensorState'}, inplace = True)
 
 print('Pre-processing AQ Sensor Data')
 oldData = aqProcessing(oldData)
+# TODO: aqProcessing not removing some values
 print('Removing trailing integers')
 oldData = rmTrailingValues(oldData, sensorTypes)
 
@@ -90,16 +91,15 @@ sensorColumns = ["rawData", "dataValue", "dataType", "plotValues", "plotLabels"]
 # Split the dataframe to move concatonated values to new rows
 splitDf = split_dataframe_rows(oldData, sensorColumns, delimeters)
 
+# Use the Pandas 'loc' function to find and replace pending changes in the dataset
+print('Converting Pending Changes')
+splitDf.loc[(splitDf.pendingChange == 'False'), 'pendingChange'] = 0
+splitDf.loc[(splitDf.pendingChange == 'True'), 'pendingChange'] = 1
+
+
 # Iterate through the fetched data, and convert it to it's normalised form
 for i, sensorData in splitDf.iterrows():
 	print("Processing sensor message " + str(i) + ".")
-
-	# Convert pendingChange True/False value into a boolean 1/0
-	if sensorData['pendingChange'] == 'False':
-		sensorData['pendingChange'] = 0
-	else:
-		sensorData['pendingChange'] = 1
-
 
 	##############
 
