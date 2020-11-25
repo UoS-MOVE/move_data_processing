@@ -287,7 +287,8 @@ def webhook():
 		sensorMessages = rmTrailingValues(sensorMessages, sensorTypes)
 		# Process any sensor messages for Air Quality
 		sensorMessages = aqProcessing(sensorMessages)
-		
+		# Filter out messages from networks not related to MOVE
+		sensorMessages = filterNetwork(sensorMessages, 58947)
 
 		# Delimeters used in the recieved sensor JSON
 		delimeters = "%2c","|","%7c"
