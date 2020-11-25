@@ -103,17 +103,29 @@ def toCSV(df, sensorID):
 
 
 # Main Body
-# Create a new DB object
-conn = dbConnect()
-# Create a new cursor from established DB connection
-cursor = conn.cursor()
+METHOD = ""
+#METHOD = "CSV"
+if (METHOD == "CSV"):
+	print('Getting data from CSV')
+	oldData = pd.read_csv(os.getcwd() + "/data/get/SensorData.csv")
 
-# Select all the data stored in the old DB form
-#SQL = "SELECT TOP(2000) * FROM salfordMove.dbo.sensorData"
-SQL = "SELECT * FROM salfordMove.dbo.sensorData"
+	# JOIN SENSOR NAMES HERE
+	sNames = pd.read_csv(os.getcwd() + "/data/get/sensorNames.csv")
 
-print('Getting data from DB')
-oldData = pd.read_sql(SQL,conn)
+	oldData = oldData.join(sNames.set_index('sensorID'), on = "sensorID")
+
+else:
+	# Create a new DB object
+	conn = dbConnect()
+	# Create a new cursor from established DB connection
+	cursor = conn.cursor()
+	# Select all the data stored in the old DB form
+	#SQL = "SELECT TOP(2000) * FROM salfordMove.dbo.sensorData"
+	SQL = "SELECT * FROM salfordMove.dbo.sensorData"
+
+	print('Getting data from DB')
+	oldData = pd.read_sql(SQL,conn)
+
 
 print('Pre-processing AQ Sensor Data')
 oldData = aqProcessing(oldData)
@@ -121,17 +133,23 @@ print('Removing trailing integers')
 oldData = rmTrailingValues(oldData, sensorTypes)
 
 # Delimeters used in the recieved data
-delimeters = "%2c","|","%7c"
+delimeters = "%2c","|","%7c", ","
 # The columns that need to be split to remove concatonated values
 sensorColumns = ["rawData", "dataValue", "dataType", "plotValues", "plotLabels"]
 # Split the dataframe to move concatonated values to new rows
 print('Splitting DataFrame')
 splitDf = split_dataframe_rows(oldData, sensorColumns, delimeters)
 
-# Use the Pandas 'loc' function to find and replace pending changes in the dataset
-print('Converting Pending Changes')
-splitDf.loc[(splitDf.pendingChange == 'False'), 'pendingChange'] = 0
-splitDf.loc[(splitDf.pendingChange == 'True'), 'pendingChange'] = 1
+if 'pendingChanges' in splitDf.columns:
+	# Use the Pandas 'loc' function to find and replace pending changes in the dataset
+	print('Converting Pending Changes')
+	splitDf.loc[(splitDf.pendingChange == 'False'), 'pendingChange'] = 0
+	splitDf.loc[(splitDf.pendingChange == 'True'), 'pendingChange'] = 1
+else:
+	splitDf['pendingChanges'] = 0
+
+if not 'networkID' in splitDf.columns:
+	splitDf['networkID'] = 58947
 
 # Pass the loaded dataframe into a function that will filter out any networks that don't involve MOVE
 filteredDF = filterNetwork(splitDf, 58947)
@@ -152,5 +170,6 @@ for i, x in filteredDF.groupby('sensorID'):
 	toXLSX(processedDF, i, XLSX_NAME)
 	#toCSV(processedDF, i)
 
-# Close DB connection
-conn.close()
+if 'conn' in globals():
+	# Close DB connection
+	conn.close()
