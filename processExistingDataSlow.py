@@ -117,31 +117,30 @@ if __name__ == '__main__':
 
 	# Select all the data stored in the old DB form
 	SQL = "SELECT * FROM salfordMove.dbo.sensorData"
-	oldData = pd.read_sql(SQL,conn)
-	oldData = oldData.head(500) # Used for testing; limits the script to using the top n entries of the dataframe
+	#SQL = "SELECT TOP (500) * FROM salfordMove.dbo.sensorData"
+	readData = pd.read_sql(SQL,conn)
 
-	print('Pre-processing AQ Sensor Data')
-	oldData = aqProcessing(oldData)
-	print('Removing trailing integers')
-	oldData = rmTrailingValues(oldData, sensorTypes)
+	# Filter out messages from networks not related to MOVE
+	oldData = filterNetwork(readData, 58947)
+	# Remove the trailing values present in the rawData field of some sensors
+	rmTrail = rmTrailingValues(oldData, sensorTypes)
+	# Process any sensor messages for Air Quality
+	aqProcessed = aqProcessing(rmTrail)
 
 	# Delimeters used in the recieved data
 	delimeters = "%2c","|","%7c"
 	# The columns that need to be split to remove concatonated values
 	sensorColumns = ["rawData", "dataValue", "dataType", "plotValues", "plotLabels"]
 	# Split the dataframe to move concatonated values to new rows
-	splitDf = split_dataframe_rows(oldData, sensorColumns, delimeters)
+	splitDf = split_dataframe_rows(aqProcessed, sensorColumns, delimeters)
+
+	# Use the Pandas 'loc' function to find and replace pending changes in the dataset
+	splitDf.loc[(splitDf.pendingChange == 'False'), 'pendingChange'] = 0
+	splitDf.loc[(splitDf.pendingChange == 'True'), 'pendingChange'] = 1
 
 	# Iterate through the fetched data, and convert it to it's normalised form
 	for i, sensorData in splitDf.iterrows():
 		print("Processing sensor message " + str(i) + ".")
-
-		# Convert pendingChange True/False value into a boolean 1/0
-		if sensorData['pendingChange'] == 'False':
-			sensorData['pendingChange'] = 0
-		else:
-			sensorData['pendingChange'] = 1
-
 
 		##############
 
