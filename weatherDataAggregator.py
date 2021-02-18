@@ -39,6 +39,8 @@ API_KEY = accessToken['TOKEN']
 
 DATE_FORMAT = "%Y-%m-%dT%H:%M:%S"	# Date format for parsing datetime returned by OnCall API
 
+RESAMPLE_PERIOD = '60min'
+
 
 # Main body
 start = datetime.strptime(START, DATE_FORMAT).date()
@@ -172,8 +174,8 @@ while start < end:
 		
 
 		#sensorData.index.names = ['Datetime']
-		sensorData = sensorData.resample('60min').mean()	# Resample data to a 15 minute average
-		sensorData = sensorData.reindex(pd.date_range(sensorData.index.min(), sensorData.index.max(), freq="60min"))
+		sensorData = sensorData.resample(RESAMPLE_PERIOD).mean()	# Resample data to an average over a defined period
+		sensorData = sensorData.reindex(pd.date_range(sensorData.index.min(), sensorData.index.max(), freq=RESAMPLE_PERIOD))
 
 
 		csvDump("weatherDataRange_" + str(START.replace(":", "-")) + '_' + str(END.replace(":", "-")), sensorData)
