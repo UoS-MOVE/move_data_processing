@@ -60,119 +60,120 @@ while start < end:
 
 	jsonLoad = response.json()	# Load the recieved JSON file from the request 
 	sensorData = json_normalize(jsonLoad)	# Convert the JSONs into pandas dataframes
-	sensorData.rename(columns={"PollTimeStamp": "Datetime", "VarValue": "Temperature in C"}, inplace=True)	# Rename used columns to more appropriate names
+
+	if (sensorData.empty):
+		print('Valid content returned')
+		sensorData.rename(columns={"PollTimeStamp": "Datetime", "VarValue": "Temperature in C"}, inplace=True)	# Rename used columns to more appropriate names
 
 
-	# Fetch Humidity data
-	REQUEST_URL = URL + ENDPOINT + "/" + DEVICE + "/" + ACTION_IDENT_HUM + "?start=" + stepStart + "&end=" + stepEnd + "&api_key=" + API_KEY	# API URl for humidity data
-	response = requests.get(REQUEST_URL)
-	print("Humidity Endpoint Status " + str(response.status_code))
-	if (response.status_code != 200): break	# Break the loop is the returned status code is not HTTP 200
-	 
-	jsonLoad = response.json()	# Load the recieved JSON file from the request
-	sensorDataHum = json_normalize(jsonLoad)	# Convert the JSONs into pandas dataframes
-	sensorDataHum.rename(columns={"PollTimeStamp": "Datetime", "VarValue": "Humidity in %"}, inplace=True)	# Rename used columns to more appropriate names
+		# Fetch Humidity data
+		REQUEST_URL = URL + ENDPOINT + "/" + DEVICE + "/" + ACTION_IDENT_HUM + "?start=" + stepStart + "&end=" + stepEnd + "&api_key=" + API_KEY	# API URl for humidity data
+		response = requests.get(REQUEST_URL)
+		print("Humidity Endpoint Status " + str(response.status_code))
+		if (response.status_code != 200): break	# Break the loop is the returned status code is not HTTP 200
+		
+		jsonLoad = response.json()	# Load the recieved JSON file from the request
+		sensorDataHum = json_normalize(jsonLoad)	# Convert the JSONs into pandas dataframes
+		sensorDataHum.rename(columns={"PollTimeStamp": "Datetime", "VarValue": "Humidity in %"}, inplace=True)	# Rename used columns to more appropriate names
 
 
-	# Fetch Pressure data
-	REQUEST_URL = URL + ENDPOINT + "/" + DEVICE + "/" + ACTION_IDENT_PRE + "?start=" + stepStart + "&end=" + stepEnd + "&api_key=" + API_KEY	# API URl for humidity data
-	response = requests.get(REQUEST_URL)
-	print("Pressure Endpoint Status " + str(response.status_code))
-	if (response.status_code != 200): break	# Break the loop is the returned status code is not HTTP 200
-	 
-	jsonLoad = response.json()	# Load the recieved JSON file from the request
-	sensorDataPre = json_normalize(jsonLoad)	# Convert the JSONs into pandas dataframes
-	sensorDataPre.rename(columns={"PollTimeStamp": "Datetime", "VarValue": "Pressure in mBar"}, inplace=True)	# Rename used columns to more appropriate names
+		# Fetch Pressure data
+		REQUEST_URL = URL + ENDPOINT + "/" + DEVICE + "/" + ACTION_IDENT_PRE + "?start=" + stepStart + "&end=" + stepEnd + "&api_key=" + API_KEY	# API URl for humidity data
+		response = requests.get(REQUEST_URL)
+		print("Pressure Endpoint Status " + str(response.status_code))
+		if (response.status_code != 200): break	# Break the loop is the returned status code is not HTTP 200
+		
+		jsonLoad = response.json()	# Load the recieved JSON file from the request
+		sensorDataPre = json_normalize(jsonLoad)	# Convert the JSONs into pandas dataframes
+		sensorDataPre.rename(columns={"PollTimeStamp": "Datetime", "VarValue": "Pressure in mBar"}, inplace=True)	# Rename used columns to more appropriate names
 
 
-	# Fetch Rainfall mm data
-	REQUEST_URL = URL + ENDPOINT + "/" + DEVICE + "/" + ACTION_IDENT_RF_MM + "?start=" + stepStart + "&end=" + stepEnd + "&api_key=" + API_KEY	# API URl for humidity data
-	response = requests.get(REQUEST_URL)
-	print("Rainfall Endpoint Status " + str(response.status_code))
-	if (response.status_code != 200): break	# Break the loop is the retur                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           bned status code is not HTTP 200
-	 
-	jsonLoad = response.json()	# Load the recieved JSON file from the request
-	sensorDataRF = json_normalize(jsonLoad)	# Convert the JSONs into pandas dataframes
-	sensorDataRF.rename(columns={"PollTimeStamp": "Datetime", "VarValue": "Rainfall in mm"}, inplace=True)	# Rename used columns to more appropriate names
+		# Fetch Rainfall mm data
+		REQUEST_URL = URL + ENDPOINT + "/" + DEVICE + "/" + ACTION_IDENT_RF_MM + "?start=" + stepStart + "&end=" + stepEnd + "&api_key=" + API_KEY	# API URl for humidity data
+		response = requests.get(REQUEST_URL)
+		print("Rainfall Endpoint Status " + str(response.status_code))
+		if (response.status_code != 200): break	# Break the loop is the retur                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           bned status code is not HTTP 200
+		
+		jsonLoad = response.json()	# Load the recieved JSON file from the request
+		sensorDataRF = json_normalize(jsonLoad)	# Convert the JSONs into pandas dataframes
+		sensorDataRF.rename(columns={"PollTimeStamp": "Datetime", "VarValue": "Rainfall in mm"}, inplace=True)	# Rename used columns to more appropriate names
 
 
-	# Fetch Raindall mm /1hr data
-	#REQUEST_URL = URL + ENDPOINT + "/" + DEVICE + "/" + ACTION_IDENT_RF_MM_1HR + "?start=" + stepStart + "&end=" + stepEnd + "&api_key=" + API_KEY	# API URl for humidity data
-	#response = requests.get(REQUEST_URL)
-	#print("Rainfall Endpoint Status " + str(response.status_code))
-	#if (response.status_code != 200): break	# Break the loop is the returned status code is not HTTP 200
-	 
-	#jsonLoad = response.json()	# Load the recieved JSON file from the request
-	#sensorDataRF1HR = json_normalize(jsonLoad)	# Convert the JSONs into pandas dataframes
-	#sensorDataRF1HR.rename(columns={"PollTimeStamp": "Datetime", "VarValue": "Rainfall in mm /1hr"}, inplace=True)	# Rename used columns to more appropriate names
+		# Fetch Raindall mm /1hr data
+		#REQUEST_URL = URL + ENDPOINT + "/" + DEVICE + "/" + ACTION_IDENT_RF_MM_1HR + "?start=" + stepStart + "&end=" + stepEnd + "&api_key=" + API_KEY	# API URl for humidity data
+		#response = requests.get(REQUEST_URL)
+		#print("Rainfall Endpoint Status " + str(response.status_code))
+		#if (response.status_code != 200): break	# Break the loop is the returned status code is not HTTP 200
+		
+		#jsonLoad = response.json()	# Load the recieved JSON file from the request
+		#sensorDataRF1HR = json_normalize(jsonLoad)	# Convert the JSONs into pandas dataframes
+		#sensorDataRF1HR.rename(columns={"PollTimeStamp": "Datetime", "VarValue": "Rainfall in mm /1hr"}, inplace=True)	# Rename used columns to more appropriate names
 
 
-	# Fetch Windspeed m/s data
-	REQUEST_URL = URL + ENDPOINT + "/" + DEVICE + "/" + ACTION_IDENT_WS_MS + "?start=" + stepStart + "&end=" + stepEnd + "&api_key=" + API_KEY	# API URl for humidity data
-	response = requests.get(REQUEST_URL)
-	print("Windspeed Endpoint Status " + str(response.status_code))
-	if (response.status_code != 200): break	# Break the loop is the returned status code is not HTTP 200
-	 
-	jsonLoad = response.json()	# Load the recieved JSON file from the request
-	sensorDataWS = json_normalize(jsonLoad)	# Convert the JSONs into pandas dataframes
-	sensorDataWS.rename(columns={"PollTimeStamp": "Datetime", "VarValue": "Windspeed in ms"}, inplace=True)	# Rename used columns to more appropriate names
+		# Fetch Windspeed m/s data
+		REQUEST_URL = URL + ENDPOINT + "/" + DEVICE + "/" + ACTION_IDENT_WS_MS + "?start=" + stepStart + "&end=" + stepEnd + "&api_key=" + API_KEY	# API URl for humidity data
+		response = requests.get(REQUEST_URL)
+		print("Windspeed Endpoint Status " + str(response.status_code))
+		if (response.status_code != 200): break	# Break the loop is the returned status code is not HTTP 200
+		jsonLoad = response.json()	# Load the recieved JSON file from the request
+		sensorDataWS = json_normalize(jsonLoad)	# Convert the JSONs into pandas dataframes
+		sensorDataWS.rename(columns={"PollTimeStamp": "Datetime", "VarValue": "Windspeed in ms"}, inplace=True)	# Rename used columns to more appropriate names
 
 
-	# Fetch Windspeed direction in degrees data
-	REQUEST_URL = URL + ENDPOINT + "/" + DEVICE + "/" + ACTION_IDENT_WD_D + "?start=" + stepStart + "&end=" + stepEnd + "&api_key=" + API_KEY	# API URl for humidity data
-	response = requests.get(REQUEST_URL)
-	print("Wind direction Endpoint Status " + str(response.status_code))
-	if (response.status_code != 200): break	# Break the loop is the returned status code is not HTTP 200
-	 
-	jsonLoad = response.json()	# Load the recieved JSON file from the request
-	sensorDataWSD = json_normalize(jsonLoad)	# Convert the JSONs into pandas dataframes
-	sensorDataWSD.rename(columns={"PollTimeStamp": "Datetime", "VarValue": "Wind direction in deg"}, inplace=True)	# Rename used columns to more appropriate names
+		# Fetch Windspeed direction in degrees data
+		REQUEST_URL = URL + ENDPOINT + "/" + DEVICE + "/" + ACTION_IDENT_WD_D + "?start=" + stepStart + "&end=" + stepEnd + "&api_key=" + API_KEY	# API URl for humidity data
+		response = requests.get(REQUEST_URL)
+		print("Wind direction Endpoint Status " + str(response.status_code))
+		if (response.status_code != 200): break	# Break the loop is the returned status code is not HTTP 200
+		
+		jsonLoad = response.json()	# Load the recieved JSON file from the request
+		sensorDataWSD = json_normalize(jsonLoad)	# Convert the JSONs into pandas dataframes
+		sensorDataWSD.rename(columns={"PollTimeStamp": "Datetime", "VarValue": "Wind direction in deg"}, inplace=True)	# Rename used columns to more appropriate names
 
 
-	# Fetch Solar output data
-	REQUEST_URL = URL + ENDPOINT + "/" + DEVICE + "/" + ACTION_IDENT_SOL_KWM2 + "?start=" + stepStart + "&end=" + stepEnd + "&api_key=" + API_KEY	# API URl for humidity data
-	response = requests.get(REQUEST_URL)
-	print("Solar output Endpoint Status " + str(response.status_code))
-	if (response.status_code != 200): break	# Break the loop is the returned status code is not HTTP 200
-	 
-	jsonLoad = response.json()	# Load the recieved JSON file from the request
-	sensorDataSOL = json_normalize(jsonLoad)	# Convert the JSONs into pandas dataframes
-	sensorDataSOL.rename(columns={"PollTimeStamp": "Datetime", "VarValue": "Solar output in kW/m2"}, inplace=True)	# Rename used columns to more appropriate names
+		# Fetch Solar output data
+		REQUEST_URL = URL + ENDPOINT + "/" + DEVICE + "/" + ACTION_IDENT_SOL_KWM2 + "?start=" + stepStart + "&end=" + stepEnd + "&api_key=" + API_KEY	# API URl for humidity data
+		response = requests.get(REQUEST_URL)
+		print("Solar output Endpoint Status " + str(response.status_code))
+		if (response.status_code != 200): break	# Break the loop is the returned status code is not HTTP 200
+		
+		jsonLoad = response.json()	# Load the recieved JSON file from the request
+		sensorDataSOL = json_normalize(jsonLoad)	# Convert the JSONs into pandas dataframes
+		sensorDataSOL.rename(columns={"PollTimeStamp": "Datetime", "VarValue": "Solar output in kW/m2"}, inplace=True)	# Rename used columns to more appropriate names
 
-	print(sensorDataHum.head())
-	print('break')
+		
+		sensorData.drop(['RECID','Limit','DeviceGUID','ActionGUID','PollType','RV'], axis=1, inplace=True)	# Drop irrelevant variables
+		sensorDataHum.drop(['RECID','Limit','DeviceGUID','ActionGUID','PollType','RV'], axis=1, inplace=True)	# Drop irrelevant variables
+		sensorDataPre.drop(['RECID','Limit','DeviceGUID','ActionGUID','PollType','RV'], axis=1, inplace=True)	# Drop irrelevant variables
+		sensorDataRF.drop(['RECID','Limit','DeviceGUID','ActionGUID','PollType','RV'], axis=1, inplace=True)	# Drop irrelevant variables
+		#sensorDataRF1HR.drop(['RECID','Limit','DeviceGUID','ActionGUID','PollType','RV'], axis=1, inplace=True)	# Drop irrelevant variables
+		sensorDataWS.drop(['RECID','Limit','DeviceGUID','ActionGUID','PollType','RV'], axis=1, inplace=True)	# Drop irrelevant variables
+		sensorDataWSD.drop(['RECID','Limit','DeviceGUID','ActionGUID','PollType','RV'], axis=1, inplace=True)	# Drop irrelevant variables
+		sensorDataSOL.drop(['RECID','Limit','DeviceGUID','ActionGUID','PollType','RV'], axis=1, inplace=True)	# Drop irrelevant variables
 
-
-	sensorData.drop(['RECID','Limit','DeviceGUID','ActionGUID','PollType','RV'], axis=1, inplace=True)	# Drop irrelevant variables
-	sensorDataPre.drop(['RECID','Limit','DeviceGUID','ActionGUID','PollType','RV'], axis=1, inplace=True)	# Drop irrelevant variables
-	sensorDataRF.drop(['RECID','Limit','DeviceGUID','ActionGUID','PollType','RV'], axis=1, inplace=True)	# Drop irrelevant variables
-	#sensorDataRF1HR.drop(['RECID','Limit','DeviceGUID','ActionGUID','PollType','RV'], axis=1, inplace=True)	# Drop irrelevant variables
-	sensorDataWS.drop(['RECID','Limit','DeviceGUID','ActionGUID','PollType','RV'], axis=1, inplace=True)	# Drop irrelevant variables
-	sensorDataWSD.drop(['RECID','Limit','DeviceGUID','ActionGUID','PollType','RV'], axis=1, inplace=True)	# Drop irrelevant variables
-	sensorDataSOL.drop(['RECID','Limit','DeviceGUID','ActionGUID','PollType','RV'], axis=1, inplace=True)	# Drop irrelevant variables
-
-	sensorData['Datetime'] = pd.to_datetime(sensorData['Datetime'])
-	sensorDataPre['Datetime'] = pd.to_datetime(sensorDataPre['Datetime'])
-	sensorDataRF['Datetime'] = pd.to_datetime(sensorDataRF['Datetime'])
-	#sensorDataRF1HR['Datetime'] = pd.to_datetime(sensorDataRF1HR['Datetime'])
-	sensorDataWS['Datetime'] = pd.to_datetime(sensorDataWS['Datetime'])
-	sensorDataWSD['Datetime'] = pd.to_datetime(sensorDataWSD['Datetime'])
-	sensorDataSOL['Datetime'] = pd.to_datetime(sensorDataSOL['Datetime'])
-
-
-	# Join fetched data & additional processing
-	sensorData = sensorData.set_index('Datetime').join(sensorDataHum.set_index('Datetime'), on = 'Datetime')
-	sensorData = sensorData.join(sensorDataPre.set_index('Datetime'), on = 'Datetime')
-	sensorData = sensorData.join(sensorDataRF.set_index('Datetime'), on = 'Datetime')
-	#sensorData = sensorData.join(sensorDataRF1HR.set_index('Datetime'), on = 'Datetime')
-	sensorData = sensorData.join(sensorDataWS.set_index('Datetime'), on = 'Datetime')
-	sensorData = sensorData.join(sensorDataWSD.set_index('Datetime'), on = 'Datetime')
-	sensorData = sensorData.join(sensorDataSOL.set_index('Datetime'), on = 'Datetime')
-	
-
-	#sensorData.index.names = ['Datetime']
-	sensorData = sensorData.resample('60min').mean()	# Resample data to a 15 minute average
-	sensorData = sensorData.reindex(pd.date_range(sensorData.index.min(), sensorData.index.max(), freq="60min"))
+		sensorData['Datetime'] = pd.to_datetime(sensorData['Datetime'])
+		sensorDataHum['Datetime'] = pd.to_datetime(sensorDataHum['Datetime'])
+		sensorDataPre['Datetime'] = pd.to_datetime(sensorDataPre['Datetime'])
+		sensorDataRF['Datetime'] = pd.to_datetime(sensorDataRF['Datetime'])
+		#sensorDataRF1HR['Datetime'] = pd.to_datetime(sensorDataRF1HR['Datetime'])
+		sensorDataWS['Datetime'] = pd.to_datetime(sensorDataWS['Datetime'])
+		sensorDataWSD['Datetime'] = pd.to_datetime(sensorDataWSD['Datetime'])
+		sensorDataSOL['Datetime'] = pd.to_datetime(sensorDataSOL['Datetime'])
 
 
-	csvDump("weatherDataRange_" + str(START.replace(":", "-")) + '_' + str(END.replace(":", "-")), sensorData)
+		# Join fetched data & additional processing
+		sensorData = sensorData.set_index('Datetime').join(sensorDataHum.set_index('Datetime'), on = 'Datetime')
+		sensorData = sensorData.join(sensorDataPre.set_index('Datetime'), on = 'Datetime')
+		sensorData = sensorData.join(sensorDataRF.set_index('Datetime'), on = 'Datetime')
+		#sensorData = sensorData.join(sensorDataRF1HR.set_index('Datetime'), on = 'Datetime')
+		sensorData = sensorData.join(sensorDataWS.set_index('Datetime'), on = 'Datetime')
+		sensorData = sensorData.join(sensorDataWSD.set_index('Datetime'), on = 'Datetime')
+		sensorData = sensorData.join(sensorDataSOL.set_index('Datetime'), on = 'Datetime')
+		
+
+		#sensorData.index.names = ['Datetime']
+		sensorData = sensorData.resample('60min').mean()	# Resample data to a 15 minute average
+		sensorData = sensorData.reindex(pd.date_range(sensorData.index.min(), sensorData.index.max(), freq="60min"))
+
+
+		csvDump("weatherDataRange_" + str(START.replace(":", "-")) + '_' + str(END.replace(":", "-")), sensorData)
