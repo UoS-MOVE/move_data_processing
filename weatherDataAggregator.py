@@ -21,25 +21,36 @@ DEVICE = "0FF00FFA2DBB4A029D2902CD33A43364"	# Cockcroft Weather Station GUID
 
 ACTION_IDENT_TEMP = "AD7396F9F28D4DA798F0370934C368A9" # Air Tempertaure in C endpoint GUID
 ACTION_IDENT_HUM = "8C5DAA6DB83E4E5C8310A27F6E549527" # Relative Humidity endpoint GUID
-ACTION_IDENT_PRE = "E589656878094D03A1554197DC90B5B5" # 
-ACTION_IDENT_RF_MM = "90828B8769E74A5B9F74761335CB1676" #
-ACTION_IDENT_RF_MM_1HR = "627EB89627FA4B98880411B3F1CB47BC" #
-ACTION_IDENT_WS_MS = "B04BE963E74F467A875C534B90BE05A0" #
-ACTION_IDENT_WD_D = "752FC7FCFE584FBF980E2FFCAD991D87" #
-ACTION_IDENT_SOL_KWM2 = "4EF9B920C87444939DE8069D37ECA200" #
+ACTION_IDENT_PRE = "E589656878094D03A1554197DC90B5B5" # Pressure endpoint GUID
+ACTION_IDENT_RF_MM = "90828B8769E74A5B9F74761335CB1676" # Rainfall in mm endpoint GUID
+ACTION_IDENT_WS_MS = "B04BE963E74F467A875C534B90BE05A0" # Windspeed in ms endpoint GUID
+ACTION_IDENT_WD_D = "752FC7FCFE584FBF980E2FFCAD991D87" # Wind direction endpoint GUID
+ACTION_IDENT_SOL_KWM2 = "4EF9B920C87444939DE8069D37ECA200" # Solar Radiation endpoint GUID
 
 
 START = "2019-09-01T00:00:00"
 END = "2021-02-16T23:59:59"
 
-#POST credentials info
+dropCols = ['RECID','Limit','DeviceGUID','ActionGUID','PollType','RV']
+
+# POST credentials
 with open("./config/.onCallAPI.json") as f:
 	accessToken = json.load(f)
 API_KEY = accessToken['TOKEN']
 
 DATE_FORMAT = "%Y-%m-%dT%H:%M:%S"	# Date format for parsing datetime returned by OnCall API
 
-RESAMPLE_PERIOD = '60min'
+
+# Function declaration
+def RESAMPLE_DATA(df, RESAMPLE_PERIOD = '60min'):
+	#df.index.names = ['Datetime']
+	df = df.resample(RESAMPLE_PERIOD).mean()	# Resample data to an average over a defined period
+	df = df.reindex(pd.date_range(df.index.min(), df.index.max(), freq=RESAMPLE_PERIOD))
+	return df
+
+def RENAME_COLUMNS(df, valName, inplaceB = True):
+	df.rename(columns={"PollTimeStamp": "Datetime", "VarValue": valName}, inplace = inplaceB)	# Rename used columns to more appropriate names
+	return df
 
 
 # Main body
@@ -65,7 +76,9 @@ while start < end:
 
 	if (sensorData.empty):
 		print('Valid content returned')
-		sensorData.rename(columns={"PollTimeStamp": "Datetime", "VarValue": "Temperature in C"}, inplace=True)	# Rename used columns to more appropriate names
+		sensorData = RENAME_COLUMNS(sensorData, "Temperature in C")	# Rename used columns to more appropriate names
+		sensorData.drop(dropCols, axis=1, inplace=True)	# Drop irrelevant variables
+		sensorData['Datetime'] = pd.to_datetime(sensorData['Datetime'])
 
 
 		# Fetch Humidity data
@@ -76,7 +89,9 @@ while start < end:
 		
 		jsonLoad = response.json()	# Load the recieved JSON file from the request
 		sensorDataHum = json_normalize(jsonLoad)	# Convert the JSONs into pandas dataframes
-		sensorDataHum.rename(columns={"PollTimeStamp": "Datetime", "VarValue": "Humidity in %"}, inplace=True)	# Rename used columns to more appropriate names
+		sensorDataHum = RENAME_COLUMNS(sensorDataHum, "Humidity in %")	# Rename used columns to more appropriate names
+		sensorDataHum.drop(dropCols, axis=1, inplace=True)	# Drop irrelevant variables
+		sensorDataHum['Datetime'] = pd.to_datetime(sensorDataHum['Datetime'])
 
 
 		# Fetch Pressure data
@@ -87,7 +102,9 @@ while start < end:
 		
 		jsonLoad = response.json()	# Load the recieved JSON file from the request
 		sensorDataPre = json_normalize(jsonLoad)	# Convert the JSONs into pandas dataframes
-		sensorDataPre.rename(columns={"PollTimeStamp": "Datetime", "VarValue": "Pressure in mBar"}, inplace=True)	# Rename used columns to more appropriate names
+		sensorDataPre = RENAME_COLUMNS(sensorDataPre, "Pressure in mBar")	# Rename used columns to more appropriate names
+		sensorDataPre.drop(dropCols, axis=1, inplace=True)	# Drop irrelevant variables
+		sensorDataPre['Datetime'] = pd.to_datetime(sensorDataPre['Datetime'])
 
 
 		# Fetch Rainfall mm data
@@ -98,18 +115,9 @@ while start < end:
 		
 		jsonLoad = response.json()	# Load the recieved JSON file from the request
 		sensorDataRF = json_normalize(jsonLoad)	# Convert the JSONs into pandas dataframes
-		sensorDataRF.rename(columns={"PollTimeStamp": "Datetime", "VarValue": "Rainfall in mm"}, inplace=True)	# Rename used columns to more appropriate names
-
-
-		# Fetch Raindall mm /1hr data
-		#REQUEST_URL = URL + ENDPOINT + "/" + DEVICE + "/" + ACTION_IDENT_RF_MM_1HR + "?start=" + stepStart + "&end=" + stepEnd + "&api_key=" + API_KEY	# API URl for humidity data
-		#response = requests.get(REQUEST_URL)
-		#print("Rainfall Endpoint Status " + str(response.status_code))
-		#if (response.status_code != 200): break	# Break the loop is the returned status code is not HTTP 200
-		
-		#jsonLoad = response.json()	# Load the recieved JSON file from the request
-		#sensorDataRF1HR = json_normalize(jsonLoad)	# Convert the JSONs into pandas dataframes
-		#sensorDataRF1HR.rename(columns={"PollTimeStamp": "Datetime", "VarValue": "Rainfall in mm /1hr"}, inplace=True)	# Rename used columns to more appropriate names
+		sensorDataRF = RENAME_COLUMNS(sensorDataRF, "Rainfall in mm")	# Rename used columns to more appropriate names
+		sensorDataRF.drop(dropCols, axis=1, inplace=True)	# Drop irrelevant variables
+		sensorDataRF['Datetime'] = pd.to_datetime(sensorDataRF['Datetime'])
 
 
 		# Fetch Windspeed m/s data
@@ -119,7 +127,9 @@ while start < end:
 		if (response.status_code != 200): break	# Break the loop is the returned status code is not HTTP 200
 		jsonLoad = response.json()	# Load the recieved JSON file from the request
 		sensorDataWS = json_normalize(jsonLoad)	# Convert the JSONs into pandas dataframes
-		sensorDataWS.rename(columns={"PollTimeStamp": "Datetime", "VarValue": "Windspeed in ms"}, inplace=True)	# Rename used columns to more appropriate names
+		sensorDataWS = RENAME_COLUMNS(sensorDataWS, "Windspeed in ms")	# Rename used columns to more appropriate names
+		sensorDataWS.drop(dropCols, axis=1, inplace=True)	# Drop irrelevant variables
+		sensorDataWS['Datetime'] = pd.to_datetime(sensorDataWS['Datetime'])
 
 
 		# Fetch Windspeed direction in degrees data
@@ -130,7 +140,9 @@ while start < end:
 		
 		jsonLoad = response.json()	# Load the recieved JSON file from the request
 		sensorDataWSD = json_normalize(jsonLoad)	# Convert the JSONs into pandas dataframes
-		sensorDataWSD.rename(columns={"PollTimeStamp": "Datetime", "VarValue": "Wind direction in deg"}, inplace=True)	# Rename used columns to more appropriate names
+		sensorDataWSD = RENAME_COLUMNS(sensorDataWSD, "Wind direction in deg")	# Rename used columns to more appropriate names
+		sensorDataWSD.drop(dropCols, axis=1, inplace=True)	# Drop irrelevant variables
+		sensorDataWSD['Datetime'] = pd.to_datetime(sensorDataWSD['Datetime'])
 
 
 		# Fetch Solar output data
@@ -141,25 +153,8 @@ while start < end:
 		
 		jsonLoad = response.json()	# Load the recieved JSON file from the request
 		sensorDataSOL = json_normalize(jsonLoad)	# Convert the JSONs into pandas dataframes
-		sensorDataSOL.rename(columns={"PollTimeStamp": "Datetime", "VarValue": "Solar output in kW/m2"}, inplace=True)	# Rename used columns to more appropriate names
-
-		
-		sensorData.drop(['RECID','Limit','DeviceGUID','ActionGUID','PollType','RV'], axis=1, inplace=True)	# Drop irrelevant variables
-		sensorDataHum.drop(['RECID','Limit','DeviceGUID','ActionGUID','PollType','RV'], axis=1, inplace=True)	# Drop irrelevant variables
-		sensorDataPre.drop(['RECID','Limit','DeviceGUID','ActionGUID','PollType','RV'], axis=1, inplace=True)	# Drop irrelevant variables
-		sensorDataRF.drop(['RECID','Limit','DeviceGUID','ActionGUID','PollType','RV'], axis=1, inplace=True)	# Drop irrelevant variables
-		#sensorDataRF1HR.drop(['RECID','Limit','DeviceGUID','ActionGUID','PollType','RV'], axis=1, inplace=True)	# Drop irrelevant variables
-		sensorDataWS.drop(['RECID','Limit','DeviceGUID','ActionGUID','PollType','RV'], axis=1, inplace=True)	# Drop irrelevant variables
-		sensorDataWSD.drop(['RECID','Limit','DeviceGUID','ActionGUID','PollType','RV'], axis=1, inplace=True)	# Drop irrelevant variables
-		sensorDataSOL.drop(['RECID','Limit','DeviceGUID','ActionGUID','PollType','RV'], axis=1, inplace=True)	# Drop irrelevant variables
-
-		sensorData['Datetime'] = pd.to_datetime(sensorData['Datetime'])
-		sensorDataHum['Datetime'] = pd.to_datetime(sensorDataHum['Datetime'])
-		sensorDataPre['Datetime'] = pd.to_datetime(sensorDataPre['Datetime'])
-		sensorDataRF['Datetime'] = pd.to_datetime(sensorDataRF['Datetime'])
-		#sensorDataRF1HR['Datetime'] = pd.to_datetime(sensorDataRF1HR['Datetime'])
-		sensorDataWS['Datetime'] = pd.to_datetime(sensorDataWS['Datetime'])
-		sensorDataWSD['Datetime'] = pd.to_datetime(sensorDataWSD['Datetime'])
+		sensorDataSOL = RENAME_COLUMNS(sensorDataSOL, "Solar output in kW/m2")	# Rename used columns to more appropriate names
+		sensorDataSOL.drop(dropCols, axis=1, inplace=True)	# Drop irrelevant variables
 		sensorDataSOL['Datetime'] = pd.to_datetime(sensorDataSOL['Datetime'])
 
 
@@ -167,15 +162,13 @@ while start < end:
 		sensorData = sensorData.set_index('Datetime').join(sensorDataHum.set_index('Datetime'), on = 'Datetime')
 		sensorData = sensorData.join(sensorDataPre.set_index('Datetime'), on = 'Datetime')
 		sensorData = sensorData.join(sensorDataRF.set_index('Datetime'), on = 'Datetime')
-		#sensorData = sensorData.join(sensorDataRF1HR.set_index('Datetime'), on = 'Datetime')
 		sensorData = sensorData.join(sensorDataWS.set_index('Datetime'), on = 'Datetime')
 		sensorData = sensorData.join(sensorDataWSD.set_index('Datetime'), on = 'Datetime')
 		sensorData = sensorData.join(sensorDataSOL.set_index('Datetime'), on = 'Datetime')
-		
 
-		#sensorData.index.names = ['Datetime']
-		sensorData = sensorData.resample(RESAMPLE_PERIOD).mean()	# Resample data to an average over a defined period
-		sensorData = sensorData.reindex(pd.date_range(sensorData.index.min(), sensorData.index.max(), freq=RESAMPLE_PERIOD))
+		sensorData = RESAMPLE_DATA(sensorData) # Resample data to 60 minute intervals
 
+		csvDump("weatherDataRange_" + str(START.replace(":", "-")) + '_' + str(END.replace(":", "-")), sensorData, index_set = True)
 
-		csvDump("weatherDataRange_" + str(START.replace(":", "-")) + '_' + str(END.replace(":", "-")), sensorData)
+	else:
+		print("Response Empty, skipping...")
