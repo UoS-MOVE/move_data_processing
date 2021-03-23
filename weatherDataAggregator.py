@@ -29,7 +29,7 @@ ACTION_IDENT_SOL_KWM2 = "4EF9B920C87444939DE8069D37ECA200" # Solar Radiation end
 
 
 START = "2019-09-01T00:00:00"
-END = "2021-02-16T23:59:59"
+END = "2021-03-21T23:59:59"
 
 dropCols = ['RECID','Limit','DeviceGUID','ActionGUID','PollType','RV']
 
@@ -40,6 +40,7 @@ API_KEY = accessToken['TOKEN']
 
 DATE_FORMAT = "%Y-%m-%dT%H:%M:%S"	# Date format for parsing datetime returned by OnCall API
 
+sd = pd.DataFrame()
 
 # Function declaration
 def RESAMPLE_DATA(df, RESAMPLE_PERIOD = '60min'):
@@ -74,101 +75,155 @@ while start < end:
 	jsonLoad = response.json()	# Load the recieved JSON file from the request 
 	sensorData = json_normalize(jsonLoad)	# Convert the JSONs into pandas dataframes
 
-	if (sensorData.empty):
+	if not (sensorData.empty):
 		print('Valid content returned')
 		sensorData = RENAME_COLUMNS(sensorData, "Temperature in C")	# Rename used columns to more appropriate names
 		sensorData.drop(dropCols, axis=1, inplace=True)	# Drop irrelevant variables
 		sensorData['Datetime'] = pd.to_datetime(sensorData['Datetime'])
+		sensorData = sensorData.set_index('Datetime')
+		csvDump("Temperature", RESAMPLE_DATA(sensorData), index_set = True, index_label_usr = "Datetime")
+	else:
+		print("Temperature Response Empty, skipping...")
 
 
-		# Fetch Humidity data
-		REQUEST_URL = URL + ENDPOINT + "/" + DEVICE + "/" + ACTION_IDENT_HUM + "?start=" + stepStart + "&end=" + stepEnd + "&api_key=" + API_KEY	# API URl for humidity data
-		response = requests.get(REQUEST_URL)
-		print("Humidity Endpoint Status " + str(response.status_code))
-		if (response.status_code != 200): break	# Break the loop is the returned status code is not HTTP 200
-		
-		jsonLoad = response.json()	# Load the recieved JSON file from the request
-		sensorDataHum = json_normalize(jsonLoad)	# Convert the JSONs into pandas dataframes
+	# Fetch Humidity data
+	REQUEST_URL = URL + ENDPOINT + "/" + DEVICE + "/" + ACTION_IDENT_HUM + "?start=" + stepStart + "&end=" + stepEnd + "&api_key=" + API_KEY	# API URl for humidity data
+	response = requests.get(REQUEST_URL)
+	print("Humidity Endpoint Status " + str(response.status_code))
+	if (response.status_code != 200): break	# Break the loop is the returned status code is not HTTP 200
+	
+	jsonLoad = response.json()	# Load the recieved JSON file from the request
+	sensorDataHum = json_normalize(jsonLoad)	# Convert the JSONs into pandas dataframes
+
+	if not (sensorDataHum.empty):
 		sensorDataHum = RENAME_COLUMNS(sensorDataHum, "Humidity in %")	# Rename used columns to more appropriate names
 		sensorDataHum.drop(dropCols, axis=1, inplace=True)	# Drop irrelevant variables
 		sensorDataHum['Datetime'] = pd.to_datetime(sensorDataHum['Datetime'])
+		sensorDataHum = sensorDataHum.set_index('Datetime')
+		csvDump("Humidity", RESAMPLE_DATA(sensorDataHum), index_set = True, index_label_usr = "Datetime")
+	else:
+		print("Humidity Response Empty, skipping...")
 
 
-		# Fetch Pressure data
-		REQUEST_URL = URL + ENDPOINT + "/" + DEVICE + "/" + ACTION_IDENT_PRE + "?start=" + stepStart + "&end=" + stepEnd + "&api_key=" + API_KEY	# API URl for humidity data
-		response = requests.get(REQUEST_URL)
-		print("Pressure Endpoint Status " + str(response.status_code))
-		if (response.status_code != 200): break	# Break the loop is the returned status code is not HTTP 200
-		
-		jsonLoad = response.json()	# Load the recieved JSON file from the request
-		sensorDataPre = json_normalize(jsonLoad)	# Convert the JSONs into pandas dataframes
+	# Fetch Pressure data
+	REQUEST_URL = URL + ENDPOINT + "/" + DEVICE + "/" + ACTION_IDENT_PRE + "?start=" + stepStart + "&end=" + stepEnd + "&api_key=" + API_KEY	# API URl for humidity data
+	response = requests.get(REQUEST_URL)
+	print("Pressure Endpoint Status " + str(response.status_code))
+	if (response.status_code != 200): break	# Break the loop is the returned status code is not HTTP 200
+	
+	jsonLoad = response.json()	# Load the recieved JSON file from the request
+	sensorDataPre = json_normalize(jsonLoad)	# Convert the JSONs into pandas dataframes
+
+	if not (sensorDataPre.empty):
 		sensorDataPre = RENAME_COLUMNS(sensorDataPre, "Pressure in mBar")	# Rename used columns to more appropriate names
 		sensorDataPre.drop(dropCols, axis=1, inplace=True)	# Drop irrelevant variables
 		sensorDataPre['Datetime'] = pd.to_datetime(sensorDataPre['Datetime'])
+		sensorDataPre = sensorDataPre.set_index('Datetime')
+		csvDump("Pressure", RESAMPLE_DATA(sensorDataPre), index_set = True, index_label_usr = "Datetime")
+	else:
+		print("Pressure Response Empty, skipping...")
 
 
-		# Fetch Rainfall mm data
-		REQUEST_URL = URL + ENDPOINT + "/" + DEVICE + "/" + ACTION_IDENT_RF_MM + "?start=" + stepStart + "&end=" + stepEnd + "&api_key=" + API_KEY	# API URl for humidity data
-		response = requests.get(REQUEST_URL)
-		print("Rainfall Endpoint Status " + str(response.status_code))
-		if (response.status_code != 200): break	# Break the loop is the retur                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           bned status code is not HTTP 200
-		
-		jsonLoad = response.json()	# Load the recieved JSON file from the request
-		sensorDataRF = json_normalize(jsonLoad)	# Convert the JSONs into pandas dataframes
+	# Fetch Rainfall mm data
+	REQUEST_URL = URL + ENDPOINT + "/" + DEVICE + "/" + ACTION_IDENT_RF_MM + "?start=" + stepStart + "&end=" + stepEnd + "&api_key=" + API_KEY	# API URl for humidity data
+	response = requests.get(REQUEST_URL)
+	print("Rainfall Endpoint Status " + str(response.status_code))
+	if (response.status_code != 200): break	# Break the loop is the retur                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           bned status code is not HTTP 200
+	
+	jsonLoad = response.json()	# Load the recieved JSON file from the request
+	sensorDataRF = json_normalize(jsonLoad)	# Convert the JSONs into pandas dataframes
+
+	if not (sensorDataRF.empty):
 		sensorDataRF = RENAME_COLUMNS(sensorDataRF, "Rainfall in mm")	# Rename used columns to more appropriate names
 		sensorDataRF.drop(dropCols, axis=1, inplace=True)	# Drop irrelevant variables
 		sensorDataRF['Datetime'] = pd.to_datetime(sensorDataRF['Datetime'])
+		sensorDataRF = sensorDataRF.set_index('Datetime')
+		csvDump("Rainfall", RESAMPLE_DATA(sensorDataRF), index_set = True, index_label_usr = "Datetime")
+	else:
+		print("Rainfall Response Empty, skipping...")
 
 
-		# Fetch Windspeed m/s data
-		REQUEST_URL = URL + ENDPOINT + "/" + DEVICE + "/" + ACTION_IDENT_WS_MS + "?start=" + stepStart + "&end=" + stepEnd + "&api_key=" + API_KEY	# API URl for humidity data
-		response = requests.get(REQUEST_URL)
-		print("Windspeed Endpoint Status " + str(response.status_code))
-		if (response.status_code != 200): break	# Break the loop is the returned status code is not HTTP 200
-		jsonLoad = response.json()	# Load the recieved JSON file from the request
-		sensorDataWS = json_normalize(jsonLoad)	# Convert the JSONs into pandas dataframes
+	# Fetch Windspeed m/s data
+	REQUEST_URL = URL + ENDPOINT + "/" + DEVICE + "/" + ACTION_IDENT_WS_MS + "?start=" + stepStart + "&end=" + stepEnd + "&api_key=" + API_KEY	# API URl for humidity data
+	response = requests.get(REQUEST_URL)
+	print("Windspeed Endpoint Status " + str(response.status_code))
+	if (response.status_code != 200): break	# Break the loop is the returned status code is not HTTP 200
+	jsonLoad = response.json()	# Load the recieved JSON file from the request
+	sensorDataWS = json_normalize(jsonLoad)	# Convert the JSONs into pandas dataframes
+
+	if not (sensorDataWS.empty):
 		sensorDataWS = RENAME_COLUMNS(sensorDataWS, "Windspeed in ms")	# Rename used columns to more appropriate names
 		sensorDataWS.drop(dropCols, axis=1, inplace=True)	# Drop irrelevant variables
 		sensorDataWS['Datetime'] = pd.to_datetime(sensorDataWS['Datetime'])
+		sensorDataWS = sensorDataWS.set_index('Datetime')
+		csvDump("Windspeed", RESAMPLE_DATA(sensorDataWS), index_set = True, index_label_usr = "Datetime")
+	else:
+		print("Windspeed Response Empty, skipping...")
 
 
-		# Fetch Windspeed direction in degrees data
-		REQUEST_URL = URL + ENDPOINT + "/" + DEVICE + "/" + ACTION_IDENT_WD_D + "?start=" + stepStart + "&end=" + stepEnd + "&api_key=" + API_KEY	# API URl for humidity data
-		response = requests.get(REQUEST_URL)
-		print("Wind direction Endpoint Status " + str(response.status_code))
-		if (response.status_code != 200): break	# Break the loop is the returned status code is not HTTP 200
-		
-		jsonLoad = response.json()	# Load the recieved JSON file from the request
-		sensorDataWSD = json_normalize(jsonLoad)	# Convert the JSONs into pandas dataframes
+	# Fetch Windspeed direction in degrees data
+	REQUEST_URL = URL + ENDPOINT + "/" + DEVICE + "/" + ACTION_IDENT_WD_D + "?start=" + stepStart + "&end=" + stepEnd + "&api_key=" + API_KEY	# API URl for humidity data
+	response = requests.get(REQUEST_URL)
+	print("Wind direction Endpoint Status " + str(response.status_code))
+	if (response.status_code != 200): break	# Break the loop is the returned status code is not HTTP 200
+	
+	jsonLoad = response.json()	# Load the recieved JSON file from the request
+	sensorDataWSD = json_normalize(jsonLoad)	# Convert the JSONs into pandas dataframes
+
+	if not (sensorDataWSD.empty):
 		sensorDataWSD = RENAME_COLUMNS(sensorDataWSD, "Wind direction in deg")	# Rename used columns to more appropriate names
 		sensorDataWSD.drop(dropCols, axis=1, inplace=True)	# Drop irrelevant variables
 		sensorDataWSD['Datetime'] = pd.to_datetime(sensorDataWSD['Datetime'])
+		sensorDataWSD = sensorDataWSD.set_index('Datetime')
+		csvDump("WindDirection", RESAMPLE_DATA(sensorDataWSD), index_set = True, index_label_usr = "Datetime")
+	else:
+		print("Wind Direction Response Empty, skipping...")
 
 
-		# Fetch Solar output data
-		REQUEST_URL = URL + ENDPOINT + "/" + DEVICE + "/" + ACTION_IDENT_SOL_KWM2 + "?start=" + stepStart + "&end=" + stepEnd + "&api_key=" + API_KEY	# API URl for humidity data
-		response = requests.get(REQUEST_URL)
-		print("Solar output Endpoint Status " + str(response.status_code))
-		if (response.status_code != 200): break	# Break the loop is the returned status code is not HTTP 200
-		
-		jsonLoad = response.json()	# Load the recieved JSON file from the request
-		sensorDataSOL = json_normalize(jsonLoad)	# Convert the JSONs into pandas dataframes
+	# Fetch Solar output data
+	REQUEST_URL = URL + ENDPOINT + "/" + DEVICE + "/" + ACTION_IDENT_SOL_KWM2 + "?start=" + stepStart + "&end=" + stepEnd + "&api_key=" + API_KEY	# API URl for humidity data
+	response = requests.get(REQUEST_URL)
+	print("Solar output Endpoint Status " + str(response.status_code))
+	if (response.status_code != 200): break	# Break the loop is the returned status code is not HTTP 200
+	
+	jsonLoad = response.json()	# Load the recieved JSON file from the request
+	sensorDataSOL = json_normalize(jsonLoad)	# Convert the JSONs into pandas dataframes
+
+	if not (sensorDataSOL.empty):
 		sensorDataSOL = RENAME_COLUMNS(sensorDataSOL, "Solar output in kW/m2")	# Rename used columns to more appropriate names
 		sensorDataSOL.drop(dropCols, axis=1, inplace=True)	# Drop irrelevant variables
 		sensorDataSOL['Datetime'] = pd.to_datetime(sensorDataSOL['Datetime'])
-
-
-		# Join fetched data & additional processing
-		sensorData = sensorData.set_index('Datetime').join(sensorDataHum.set_index('Datetime'), on = 'Datetime')
-		sensorData = sensorData.join(sensorDataPre.set_index('Datetime'), on = 'Datetime')
-		sensorData = sensorData.join(sensorDataRF.set_index('Datetime'), on = 'Datetime')
-		sensorData = sensorData.join(sensorDataWS.set_index('Datetime'), on = 'Datetime')
-		sensorData = sensorData.join(sensorDataWSD.set_index('Datetime'), on = 'Datetime')
-		sensorData = sensorData.join(sensorDataSOL.set_index('Datetime'), on = 'Datetime')
-
-		sensorData = RESAMPLE_DATA(sensorData) # Resample data to 60 minute intervals
-
-		csvDump("weatherDataRange_" + str(START.replace(":", "-")) + '_' + str(END.replace(":", "-")), sensorData, index_set = True)
-
+		sensorDataSOL = sensorDataSOL.set_index('Datetime')
+		csvDump("SolarOutput", RESAMPLE_DATA(sensorDataSOL), index_set = True, index_label_usr = "Datetime")
 	else:
-		print("Response Empty, skipping...")
+		print("Solar Response Empty, skipping...")
+
+
+	# Join fetched data & additional processing
+	if not (sensorData.empty) and not (sensorDataHum.empty):
+		sensorData = sensorData.join(sensorDataHum, on = 'Datetime', how = "outer")
+	elif not (sensorData.empty):
+		sensorData = sensorData
+	elif not (sensorDataHum.empty):
+		sensorData = sensorDataHum
+
+	if not (sensorDataPre.empty):
+		sensorData = sensorData.join(sensorDataPre, on = 'Datetime', how = "outer")
+	if not (sensorDataRF.empty):
+		sensorData = sensorData.join(sensorDataRF, on = 'Datetime', how = "outer")
+	if not (sensorDataWS.empty):
+		sensorData = sensorData.join(sensorDataWS, on = 'Datetime', how = "outer")
+	if not (sensorDataWSD.empty):
+		sensorData = sensorData.join(sensorDataWSD, on = 'Datetime', how = "outer")
+	if not (sensorDataSOL.empty):
+		sensorData = sensorData.join(sensorDataSOL, on = 'Datetime', how = "outer")
+
+	
+	if (sd.empty):
+		sd = sensorData
+	else:
+		sd.append(sensorData)
+
+
+sd = RESAMPLE_DATA(sd) # Resample data to 60 minute intervals
+csvDump("weatherDataRange_" + str(START.replace(":", "-")) + '_' + str(END.replace(":", "-")), sd, index_set = True, index_label_usr = "Datetime")
