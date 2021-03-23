@@ -69,13 +69,13 @@ def jsonDump(struct):
 		json.dump(struct, f)
 
 # Function to save the processed data to a CSV
-def csvDump(fileName, struct, index_set = False):
+def csvDump(fileName, struct, index_set = False, index_label_usr = False):
 	print('CSV Dump')
 	if os.path.exists(CSV_DIR + fileName + '.csv'):
-		with open(CSV_DIR + fileName + '.csv', 'a', encoding="utf-8") as fd:
+		with open(CSV_DIR + fileName + '.csv', 'a', encoding="utf-8", newline="") as fd:
 			struct.to_csv(fd, header=False, index=index_set)
 	else:
-		struct.to_csv(CSV_DIR + fileName + '.csv', index=index_set)
+		struct.to_csv(CSV_DIR + fileName + '.csv', index=index_set, index_label = index_label_usr)
 
 # Convert returned strings from the DB into GUID
 def strToUUID(struct):
