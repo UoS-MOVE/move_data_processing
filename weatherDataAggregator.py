@@ -28,8 +28,8 @@ ACTION_IDENT_WD_D = "752FC7FCFE584FBF980E2FFCAD991D87" # Wind direction endpoint
 ACTION_IDENT_SOL_KWM2 = "4EF9B920C87444939DE8069D37ECA200" # Solar Radiation endpoint GUID
 
 
-START = "2019-09-01T00:00:00"
-END = "2021-03-21T23:59:59"
+START = "2021-02-01T00:00:00"
+END = "2021-04-19T23:59:59"
 
 dropCols = ['RECID','Limit','DeviceGUID','ActionGUID','PollType','RV']
 
@@ -41,6 +41,12 @@ API_KEY = accessToken['TOKEN']
 DATE_FORMAT = "%Y-%m-%dT%H:%M:%S"	# Date format for parsing datetime returned by OnCall API
 
 sd = pd.DataFrame()
+sdH = pd.DataFrame()
+sdP = pd.DataFrame()
+sdRF = pd.DataFrame()
+sdWS = pd.DataFrame()
+sdWSD = pd.DataFrame()
+sdS = pd.DataFrame()
 
 # Function declaration
 def RESAMPLE_DATA(df, RESAMPLE_PERIOD = '60min'):
@@ -198,32 +204,62 @@ while start < end:
 	else:
 		print("Solar Response Empty, skipping...")
 
-
-	# Join fetched data & additional processing
-	if not (sensorData.empty) and not (sensorDataHum.empty):
-		sensorData = sensorData.join(sensorDataHum, on = 'Datetime', how = "outer")
-	elif not (sensorData.empty):
-		sensorData = sensorData
-	elif not (sensorDataHum.empty):
-		sensorData = sensorDataHum
-
-	if not (sensorDataPre.empty):
-		sensorData = sensorData.join(sensorDataPre, on = 'Datetime', how = "outer")
-	if not (sensorDataRF.empty):
-		sensorData = sensorData.join(sensorDataRF, on = 'Datetime', how = "outer")
-	if not (sensorDataWS.empty):
-		sensorData = sensorData.join(sensorDataWS, on = 'Datetime', how = "outer")
-	if not (sensorDataWSD.empty):
-		sensorData = sensorData.join(sensorDataWSD, on = 'Datetime', how = "outer")
-	if not (sensorDataSOL.empty):
-		sensorData = sensorData.join(sensorDataSOL, on = 'Datetime', how = "outer")
-
-	
+	#	Maintain separate dataframes for the aggregated weather station data	
+	##	This is a workaround to prevent significant gaps from ocurring in the data 
+	## 		when resampling and joining the dataframes differences in the recorded timestamps 
+	## 		causes gaps to appear in the data even when resampling to 1 hour gaps.
 	if (sd.empty):
 		sd = sensorData
 	else:
-		sd.append(sensorData)
+		sd = sd.append(sensorData)
+	
+	if (sdH.empty):
+		sdH = sensorDataHum
+	else:
+		sdH = sdH.append(sensorDataHum)
+	
+	if (sdP.empty):
+		sdP = sensorDataPre
+	else:
+		sdP = sdP.append(sensorDataPre)
+	
+	if (sdRF.empty):
+		sdRF = sensorDataRF
+	else:
+		sdRF = sdRF.append(sensorDataRF)
+	
+	if (sdWS.empty):
+		sdWS = sensorDataWS
+	else:
+		sdWS = sdWS.append(sensorDataWS)
+	
+	if (sdWSD.empty):
+		sdWSD = sensorDataWSD
+	else:
+		sdWSD = sdWSD.append(sensorDataWSD)
+
+	if (sdS.empty):
+		sdS = sensorDataSOL
+	else:
+		sdS = sdS.append(sensorDataSOL)
 
 
-sd = RESAMPLE_DATA(sd) # Resample data to 60 minute intervals
-csvDump("weatherDataRange_" + str(START.replace(":", "-")) + '_' + str(END.replace(":", "-")), sd, index_set = True, index_label_usr = "Datetime")
+#	Resample data to 60 minute intervals
+##	Resampling data after all available data has been aggregated revents gaps
+sd = RESAMPLE_DATA(sd)
+sdH = RESAMPLE_DATA(sdH)
+sdP = RESAMPLE_DATA(sdP)
+sdRF = RESAMPLE_DATA(sdRF)
+sdWS = RESAMPLE_DATA(sdWS)
+sdWSD = RESAMPLE_DATA(sdWSD)
+sdS = RESAMPLE_DATA(sdS)
+
+# Join the dataframes
+sensorDataFinal = sd.join(sdH, how = "outer")
+sensorDataFinal = sensorDataFinal.join(sdP, how = "outer")
+sensorDataFinal = sensorDataFinal.join(sdRF, how = "outer")
+sensorDataFinal = sensorDataFinal.join(sdWS, how = "outer")
+sensorDataFinal = sensorDataFinal.join(sdWSD, how = "outer")
+sensorDataFinal = sensorDataFinal.join(sdS, how = "outer")
+
+csvDump("weatherDataRange_" + str(START.replace(":", "-")) + '_' + str(END.replace(":", "-")), sensorDataFinal, index_set = True, index_label_usr = "Datetime")
