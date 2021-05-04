@@ -1,12 +1,29 @@
+# Testing script for experimenting with resampling and merging weather station data.
+
 import os
 import pandas as pd
 
 CSV_DIR = os.getcwd() + "/data/csv/"
 
-df = pd.read_csv(CSV_DIR + "weatherDataRange_2019-09-01T00-00-00_2020-12-13T23-59-59.csv", index_col="PollTimeStamp", parse_dates=True, low_memory=False)
-df.drop(['RECID','Limit','DeviceGUID','ActionGUID','PollType','RV'], axis=1, inplace=True)
-df.rename(columns={"PollTimeStamp": "Datetime", "VarValue": "Temperature in C"}, inplace=True)
-df.index.names = ['Datetime']
-df = df.resample('10min').mean()
-df = df.reindex(pd.date_range(df.index.min(), df.index.max(), freq="10min"))
-df.to_csv(CSV_DIR + "weatherDataReduced.csv", index=True, index_label="DateTime")
+
+def resample(struct, interval = "60min"):
+	struct = struct.resample(interval).mean()
+	struct = struct.reindex(pd.date_range(struct.index.min(), struct.index.max(), freq=interval))
+	return struct
+
+Humidity = pd.read_csv(CSV_DIR + "Humidity.csv", index_col="Datetime", parse_dates=True, low_memory=False)
+Pressure = pd.read_csv(CSV_DIR + "Pressure.csv", index_col="Datetime", parse_dates=True, low_memory=False)
+Rainfall = pd.read_csv(CSV_DIR + "Rainfall.csv", index_col="Datetime", parse_dates=True, low_memory=False)
+SolarOutput = pd.read_csv(CSV_DIR + "SolarOutput.csv", index_col="Datetime", parse_dates=True, low_memory=False)
+Temperature = pd.read_csv(CSV_DIR + "Temperature.csv", index_col="Datetime", parse_dates=True, low_memory=False)
+WindDirection = pd.read_csv(CSV_DIR + "WindDirection.csv", index_col="Datetime", parse_dates=True, low_memory=False)
+Windspeed = pd.read_csv(CSV_DIR + "Windspeed.csv", index_col="Datetime", parse_dates=True, low_memory=False)
+
+data = Humidity.join(Pressure, on = "Datetime", how = "outer")
+data = data.join(Rainfall, on = "Datetime", how = "outer")
+data = data.join(SolarOutput, on = "Datetime", how = "outer")
+data = data.join(Temperature, on = "Datetime", how = "outer")
+data = data.join(WindDirection, on = "Datetime", how = "outer")
+data = data.join(Windspeed, on = "Datetime", how = "outer")
+
+data.to_csv(CSV_DIR + "/Joined/" + "Data.csv", index=True, index_label="DateTime")
