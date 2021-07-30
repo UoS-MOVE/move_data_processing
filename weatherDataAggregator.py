@@ -15,7 +15,7 @@ from app import csvDump
 import os
 
 # Variable Declarations
-URL = "http://146.87.171.58/Panasense.OnCall.Finestra/api"
+URL = "http://146.87.171.58/panasense.oncall.finestra.live/api"
 ENDPOINT = "/dailypollarchive"
 DEVICE = "0FF00FFA2DBB4A029D2902CD33A43364"	# Cockcroft Weather Station GUID
 
@@ -28,8 +28,8 @@ ACTION_IDENT_WD_D = "752FC7FCFE584FBF980E2FFCAD991D87" # Wind direction endpoint
 ACTION_IDENT_SOL_KWM2 = "4EF9B920C87444939DE8069D37ECA200" # Solar Radiation endpoint GUID
 
 
-START = "2021-02-01T00:00:00"
-END = "2021-04-19T23:59:59"
+START = "2021-02-18T00:00:00"
+END = "2021-07-29T12:00:00"
 
 dropCols = ['RECID','Limit','DeviceGUID','ActionGUID','PollType','RV']
 
@@ -63,7 +63,7 @@ def RENAME_COLUMNS(df, valName, inplaceB = True):
 # Main body
 start = datetime.strptime(START, DATE_FORMAT).date()
 end = datetime.strptime(END, DATE_FORMAT).date()
-step = timedelta(days=5)	# Sets the step gap for getting data in specific increments
+step = timedelta(days=4)	# Sets the step gap for getting data in specific increments
 
 while start < end:
 	stepStart = start.strftime(DATE_FORMAT)
@@ -87,7 +87,7 @@ while start < end:
 		sensorData.drop(dropCols, axis=1, inplace=True)	# Drop irrelevant variables
 		sensorData['Datetime'] = pd.to_datetime(sensorData['Datetime'])
 		sensorData = sensorData.set_index('Datetime')
-		csvDump("Temperature", RESAMPLE_DATA(sensorData), index_set = True, index_label_usr = "Datetime")
+		#csvDump("Temperature", RESAMPLE_DATA(sensorData), index_set = True, index_label_usr = "Datetime")
 	else:
 		print("Temperature Response Empty, skipping...")
 
@@ -106,7 +106,7 @@ while start < end:
 		sensorDataHum.drop(dropCols, axis=1, inplace=True)	# Drop irrelevant variables
 		sensorDataHum['Datetime'] = pd.to_datetime(sensorDataHum['Datetime'])
 		sensorDataHum = sensorDataHum.set_index('Datetime')
-		csvDump("Humidity", RESAMPLE_DATA(sensorDataHum), index_set = True, index_label_usr = "Datetime")
+		#csvDump("Humidity", RESAMPLE_DATA(sensorDataHum), index_set = True, index_label_usr = "Datetime")
 	else:
 		print("Humidity Response Empty, skipping...")
 
@@ -125,7 +125,7 @@ while start < end:
 		sensorDataPre.drop(dropCols, axis=1, inplace=True)	# Drop irrelevant variables
 		sensorDataPre['Datetime'] = pd.to_datetime(sensorDataPre['Datetime'])
 		sensorDataPre = sensorDataPre.set_index('Datetime')
-		csvDump("Pressure", RESAMPLE_DATA(sensorDataPre), index_set = True, index_label_usr = "Datetime")
+		#csvDump("Pressure", RESAMPLE_DATA(sensorDataPre), index_set = True, index_label_usr = "Datetime")
 	else:
 		print("Pressure Response Empty, skipping...")
 
@@ -144,7 +144,7 @@ while start < end:
 		sensorDataRF.drop(dropCols, axis=1, inplace=True)	# Drop irrelevant variables
 		sensorDataRF['Datetime'] = pd.to_datetime(sensorDataRF['Datetime'])
 		sensorDataRF = sensorDataRF.set_index('Datetime')
-		csvDump("Rainfall", RESAMPLE_DATA(sensorDataRF), index_set = True, index_label_usr = "Datetime")
+		#csvDump("Rainfall", RESAMPLE_DATA(sensorDataRF), index_set = True, index_label_usr = "Datetime")
 	else:
 		print("Rainfall Response Empty, skipping...")
 
@@ -162,7 +162,7 @@ while start < end:
 		sensorDataWS.drop(dropCols, axis=1, inplace=True)	# Drop irrelevant variables
 		sensorDataWS['Datetime'] = pd.to_datetime(sensorDataWS['Datetime'])
 		sensorDataWS = sensorDataWS.set_index('Datetime')
-		csvDump("Windspeed", RESAMPLE_DATA(sensorDataWS), index_set = True, index_label_usr = "Datetime")
+		#csvDump("Windspeed", RESAMPLE_DATA(sensorDataWS), index_set = True, index_label_usr = "Datetime")
 	else:
 		print("Windspeed Response Empty, skipping...")
 
@@ -181,7 +181,7 @@ while start < end:
 		sensorDataWSD.drop(dropCols, axis=1, inplace=True)	# Drop irrelevant variables
 		sensorDataWSD['Datetime'] = pd.to_datetime(sensorDataWSD['Datetime'])
 		sensorDataWSD = sensorDataWSD.set_index('Datetime')
-		csvDump("WindDirection", RESAMPLE_DATA(sensorDataWSD), index_set = True, index_label_usr = "Datetime")
+		#csvDump("WindDirection", RESAMPLE_DATA(sensorDataWSD), index_set = True, index_label_usr = "Datetime")
 	else:
 		print("Wind Direction Response Empty, skipping...")
 
@@ -200,7 +200,7 @@ while start < end:
 		sensorDataSOL.drop(dropCols, axis=1, inplace=True)	# Drop irrelevant variables
 		sensorDataSOL['Datetime'] = pd.to_datetime(sensorDataSOL['Datetime'])
 		sensorDataSOL = sensorDataSOL.set_index('Datetime')
-		csvDump("SolarOutput", RESAMPLE_DATA(sensorDataSOL), index_set = True, index_label_usr = "Datetime")
+		#csvDump("SolarOutput", RESAMPLE_DATA(sensorDataSOL), index_set = True, index_label_usr = "Datetime")
 	else:
 		print("Solar Response Empty, skipping...")
 
