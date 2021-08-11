@@ -28,8 +28,8 @@ ACTION_IDENT_WD_D = "752FC7FCFE584FBF980E2FFCAD991D87" # Wind direction endpoint
 ACTION_IDENT_SOL_KWM2 = "4EF9B920C87444939DE8069D37ECA200" # Solar Radiation endpoint GUID
 
 
-START = "2021-02-18T00:00:00"
-END = "2021-07-29T12:00:00"
+START = "2019-01-01T00:00:00"
+END = "2019-08-31T23:00:00"
 
 dropCols = ['RECID','Limit','DeviceGUID','ActionGUID','PollType','RV']
 
@@ -63,7 +63,7 @@ def RENAME_COLUMNS(df, valName, inplaceB = True):
 # Main body
 start = datetime.strptime(START, DATE_FORMAT).date()
 end = datetime.strptime(END, DATE_FORMAT).date()
-step = timedelta(days=4)	# Sets the step gap for getting data in specific increments
+step = timedelta(days=5)	# Sets the step gap for getting data in specific increments
 
 while start < end:
 	stepStart = start.strftime(DATE_FORMAT)
@@ -75,14 +75,14 @@ while start < end:
 	# Fetch Temperature data
 	REQUEST_URL = URL + ENDPOINT + "/" + DEVICE + "/" + ACTION_IDENT_TEMP + "?start=" + stepStart + "&end=" + stepEnd + "&api_key=" + API_KEY	# API URL for temperature data
 	response = requests.get(REQUEST_URL)
-	print("Temperature Endpoint Status " + str(response.status_code))
+	#print("Temperature Endpoint Status " + str(response.status_code))
 	if (response.status_code != 200): break	# Break the loop is the returned status code is not HTTP 200
 
 	jsonLoad = response.json()	# Load the recieved JSON file from the request 
 	sensorData = json_normalize(jsonLoad)	# Convert the JSONs into pandas dataframes
 
 	if not (sensorData.empty):
-		print('Valid content returned')
+		#print('Valid content returned')
 		sensorData = RENAME_COLUMNS(sensorData, "Temperature in C")	# Rename used columns to more appropriate names
 		sensorData.drop(dropCols, axis=1, inplace=True)	# Drop irrelevant variables
 		sensorData['Datetime'] = pd.to_datetime(sensorData['Datetime'])
@@ -95,7 +95,7 @@ while start < end:
 	# Fetch Humidity data
 	REQUEST_URL = URL + ENDPOINT + "/" + DEVICE + "/" + ACTION_IDENT_HUM + "?start=" + stepStart + "&end=" + stepEnd + "&api_key=" + API_KEY	# API URl for humidity data
 	response = requests.get(REQUEST_URL)
-	print("Humidity Endpoint Status " + str(response.status_code))
+	#print("Humidity Endpoint Status " + str(response.status_code))
 	if (response.status_code != 200): break	# Break the loop is the returned status code is not HTTP 200
 	
 	jsonLoad = response.json()	# Load the recieved JSON file from the request
@@ -114,7 +114,7 @@ while start < end:
 	# Fetch Pressure data
 	REQUEST_URL = URL + ENDPOINT + "/" + DEVICE + "/" + ACTION_IDENT_PRE + "?start=" + stepStart + "&end=" + stepEnd + "&api_key=" + API_KEY	# API URl for humidity data
 	response = requests.get(REQUEST_URL)
-	print("Pressure Endpoint Status " + str(response.status_code))
+	#print("Pressure Endpoint Status " + str(response.status_code))
 	if (response.status_code != 200): break	# Break the loop is the returned status code is not HTTP 200
 	
 	jsonLoad = response.json()	# Load the recieved JSON file from the request
@@ -133,7 +133,7 @@ while start < end:
 	# Fetch Rainfall mm data
 	REQUEST_URL = URL + ENDPOINT + "/" + DEVICE + "/" + ACTION_IDENT_RF_MM + "?start=" + stepStart + "&end=" + stepEnd + "&api_key=" + API_KEY	# API URl for humidity data
 	response = requests.get(REQUEST_URL)
-	print("Rainfall Endpoint Status " + str(response.status_code))
+	#print("Rainfall Endpoint Status " + str(response.status_code))
 	if (response.status_code != 200): break	# Break the loop is the retur                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           bned status code is not HTTP 200
 	
 	jsonLoad = response.json()	# Load the recieved JSON file from the request
@@ -152,7 +152,7 @@ while start < end:
 	# Fetch Windspeed m/s data
 	REQUEST_URL = URL + ENDPOINT + "/" + DEVICE + "/" + ACTION_IDENT_WS_MS + "?start=" + stepStart + "&end=" + stepEnd + "&api_key=" + API_KEY	# API URl for humidity data
 	response = requests.get(REQUEST_URL)
-	print("Windspeed Endpoint Status " + str(response.status_code))
+	#print("Windspeed Endpoint Status " + str(response.status_code))
 	if (response.status_code != 200): break	# Break the loop is the returned status code is not HTTP 200
 	jsonLoad = response.json()	# Load the recieved JSON file from the request
 	sensorDataWS = json_normalize(jsonLoad)	# Convert the JSONs into pandas dataframes
@@ -170,7 +170,7 @@ while start < end:
 	# Fetch Windspeed direction in degrees data
 	REQUEST_URL = URL + ENDPOINT + "/" + DEVICE + "/" + ACTION_IDENT_WD_D + "?start=" + stepStart + "&end=" + stepEnd + "&api_key=" + API_KEY	# API URl for humidity data
 	response = requests.get(REQUEST_URL)
-	print("Wind direction Endpoint Status " + str(response.status_code))
+	#print("Wind direction Endpoint Status " + str(response.status_code))
 	if (response.status_code != 200): break	# Break the loop is the returned status code is not HTTP 200
 	
 	jsonLoad = response.json()	# Load the recieved JSON file from the request
@@ -189,7 +189,7 @@ while start < end:
 	# Fetch Solar output data
 	REQUEST_URL = URL + ENDPOINT + "/" + DEVICE + "/" + ACTION_IDENT_SOL_KWM2 + "?start=" + stepStart + "&end=" + stepEnd + "&api_key=" + API_KEY	# API URl for humidity data
 	response = requests.get(REQUEST_URL)
-	print("Solar output Endpoint Status " + str(response.status_code))
+	#print("Solar output Endpoint Status " + str(response.status_code))
 	if (response.status_code != 200): break	# Break the loop is the returned status code is not HTTP 200
 	
 	jsonLoad = response.json()	# Load the recieved JSON file from the request
@@ -243,23 +243,25 @@ while start < end:
 	else:
 		sdS = sdS.append(sensorDataSOL)
 
+if sd.empty:
+	print ('No Returned data')
+else:
+	#	Resample data to 60 minute intervals
+	##	Resampling data after all available data has been aggregated revents gaps
+	sd = RESAMPLE_DATA(sd)
+	sdH = RESAMPLE_DATA(sdH)
+	sdP = RESAMPLE_DATA(sdP)
+	sdRF = RESAMPLE_DATA(sdRF)
+	sdWS = RESAMPLE_DATA(sdWS)
+	sdWSD = RESAMPLE_DATA(sdWSD)
+	sdS = RESAMPLE_DATA(sdS)
 
-#	Resample data to 60 minute intervals
-##	Resampling data after all available data has been aggregated revents gaps
-sd = RESAMPLE_DATA(sd)
-sdH = RESAMPLE_DATA(sdH)
-sdP = RESAMPLE_DATA(sdP)
-sdRF = RESAMPLE_DATA(sdRF)
-sdWS = RESAMPLE_DATA(sdWS)
-sdWSD = RESAMPLE_DATA(sdWSD)
-sdS = RESAMPLE_DATA(sdS)
+	# Join the dataframes
+	sensorDataFinal = sd.join(sdH, how = "outer")
+	sensorDataFinal = sensorDataFinal.join(sdP, how = "outer")
+	sensorDataFinal = sensorDataFinal.join(sdRF, how = "outer")
+	sensorDataFinal = sensorDataFinal.join(sdWS, how = "outer")
+	sensorDataFinal = sensorDataFinal.join(sdWSD, how = "outer")
+	sensorDataFinal = sensorDataFinal.join(sdS, how = "outer")
 
-# Join the dataframes
-sensorDataFinal = sd.join(sdH, how = "outer")
-sensorDataFinal = sensorDataFinal.join(sdP, how = "outer")
-sensorDataFinal = sensorDataFinal.join(sdRF, how = "outer")
-sensorDataFinal = sensorDataFinal.join(sdWS, how = "outer")
-sensorDataFinal = sensorDataFinal.join(sdWSD, how = "outer")
-sensorDataFinal = sensorDataFinal.join(sdS, how = "outer")
-
-csvDump("weatherDataRange_" + str(START.replace(":", "-")) + '_' + str(END.replace(":", "-")), sensorDataFinal, index_set = True, index_label_usr = "Datetime")
+	csvDump("weatherDataRange_" + str(START.replace(":", "-")) + '_' + str(END.replace(":", "-")), sensorDataFinal, index_set = True, index_label_usr = "Datetime")
