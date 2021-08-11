@@ -52,7 +52,7 @@ while rows:
 	if (dataDF.empty):
 		dataDF = rows
 	else:
-		dataDF.append(rows)
+		dataDF = dataDF.append(rows)
 
 	if cursor.nextset():
 		rows = cursor.fetchall()
