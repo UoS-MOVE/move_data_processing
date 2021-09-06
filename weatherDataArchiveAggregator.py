@@ -15,7 +15,7 @@ from app import csvDump
 import os
 
 # Variable Declarations
-URL = "http://146.87.171.58/panasense.oncall.finestra.live/api"
+URL = "http://146.87.171.58/Panasense.OnCall.API.Archive"
 ENDPOINT = "/dailypollarchive"
 DEVICE = "0FF00FFA2DBB4A029D2902CD33A43364"	# Cockcroft Weather Station GUID
 
@@ -28,8 +28,8 @@ ACTION_IDENT_WD_D = "752FC7FCFE584FBF980E2FFCAD991D87" # Wind direction endpoint
 ACTION_IDENT_SOL_KWM2 = "4EF9B920C87444939DE8069D37ECA200" # Solar Radiation endpoint GUID
 
 
-START = "2021-03-01T00:00:00"
-END = "2021-09-08T23:00:00"
+START = "2019-01-01T00:00:00"
+END = "2019-09-01T00:00:00"
 
 dropCols = ['RECID','Limit','DeviceGUID','ActionGUID','PollType','RV']
 
