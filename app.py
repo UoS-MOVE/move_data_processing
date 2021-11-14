@@ -29,9 +29,15 @@ JSON_NAME = 'monnit_' + str(datetime.datetime.now()) + '.json'
 CSV_DIR = os.getcwd() + '/data/csv/'
 JSON_DIR = os.getcwd() + '/data/json/'
 
+
 #POST credentials info
 post_uname = config('POST_CREDS_UNAME')
 post_pwd = config('POST_CREDS_PWD')
+
+
+# Open file containing the sensor types to look for
+sensor_types = config('MONNNIT_SENSOR_TYPES', cast=Csv())
+
 
 #SQL Server connection info
 db_server = config('DB_SERVER')
@@ -39,16 +45,13 @@ db_database = config('DB_DATABASE')
 db_usr = config('DB_UNAME')
 db_pwd = config('DB_PWD')
 
-# Formatted connection string for the SQL DB.
-#SQL_CONN_STR = 'DSN=' + db_server + ';Database=' + db_database + ';Trusted_Connection=no;UID=' + db_usr + ';PWD=' + db_pwd + ';'
-SQL_CONN_STR = 'DSN=' + db_server + ';'
 
-# Open file containing the sensor types to look for
-sensor_types = config('MONNNIT_SENSOR_TYPES', cast=Csv())
+# Formatted connection string for the SQL DB.
+SQL_CONN_STR = 'DSN=' + db_server + ';Database=' + db_database + ';Trusted_Connection=no;UID=' + db_usr + ';PWD=' + db_pwd + ';'
+
 
 # Flask web server
 app = Flask(__name__)
-
 app.config['BASIC_AUTH_USERNAME'] = post_uname
 app.config['BASIC_AUTH_PASSWORD'] = post_pwd
 app.config['BASIC_AUTH_FORCE'] = True
