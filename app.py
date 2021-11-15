@@ -40,6 +40,7 @@ sensor_types = config('MONNNIT_SENSOR_TYPES', cast=Csv())
 
 
 #SQL Server connection info
+db_driver = config('DB_DRIVER')
 db_server = config('DB_SERVER')
 db_database = config('DB_DATABASE')
 db_usr = config('DB_UNAME')
@@ -47,8 +48,8 @@ db_pwd = config('DB_PWD')
 
 
 # Formatted connection string for the SQL DB.
-SQL_CONN_STR = 'DSN=' + db_server + ';Database=' + db_database + ';Trusted_Connection=no;UID=' + db_usr + ';PWD=' + db_pwd + ';'
-
+#SQL_CONN_STR = 'DSN=' + db_server + ';Database=' + db_database + ';Trusted_Connection=no;UID=' + db_usr + ';PWD=' + db_pwd + ';'
+SQL_CONN_STR = "DRIVER={0};SERVER={1};Database={2};UID={3};PWD={4};".format(db_driver, db_server, db_database, db_usr, db_pwd)
 
 # Flask web server
 app = Flask(__name__)
