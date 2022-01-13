@@ -1,32 +1,27 @@
-# Title: Monnit Webhook Processor
-# Description: Receives the webhook from the Monnit servers 
-#              and stores the data into an SQL Server database,
-#			   as well as processing the data to separate 
-# 			   concatonated data from the received data.
-# Author: Ethan Bellmer
-# Date: 16/01/2020
-# Version: 2.0
+"""
+Receives the webhook from the Monnit servers 
+and stores the data into an SQL Server database,
+as well as processing the data to separate 
+concatonated data from the received data.
+"""
 
-# Venv activation is blocked by default because the process isn't singed, so run this first:
-# Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope Process
+
+__author__ = "Ethan Bellmer"
+__version__ = "3"
+
 
 # Import libraries
-import sys
-from flask import Flask, request, abort, current_app, g
-from flask.cli import with_appcontext
+from flask import Flask, request, abort, g
 from flask_basicauth import BasicAuth
 from werkzeug.serving import WSGIRequestHandler
 import json
 import pandas as pd
 import os
-import traceback
 import datetime
-
 from pandas import json_normalize
-
 import pyodbc
-
 from uuid import UUID
+from decouple import config, Csv
 
 
 # Variable declarations
@@ -34,29 +29,33 @@ JSON_NAME = 'monnit_' + str(datetime.datetime.now()) + '.json'
 CSV_DIR = os.getcwd() + '/data/csv/'
 JSON_DIR = os.getcwd() + '/data/json/'
 
+
 #POST credentials info
-with open("./config/.postCreds.json") as f:
-	postCreds = json.load(f)
+post_uname = config('POST_CREDS_UNAME')
+post_pwd = config('POST_CREDS_PWD')
 
-#SQL Server connection info
-with open("./config/.dbCreds.json") as f:
-	dbCreds = json.load(f)
-
-# Formatted connection string for the SQL DB.
-SQL_CONN_STR = 'DSN=' + dbCreds['SERVER'] + ';Database=' + dbCreds['DATABASE'] + ';Trusted_Connection=no;UID=' + dbCreds['UNAME'] + ';PWD=' + dbCreds['PWD'] + ';'
 
 # Open file containing the sensor types to look for
-with open('./config/sensorTypes.txt') as f:
-    sensorTypes = f.read().splitlines()
+sensor_types = config('MONNNIT_SENSOR_TYPES', cast=Csv())
+
+
+#SQL Server connection info
+db_driver = config('DB_DRIVER')
+db_server = config('DB_SERVER')
+db_database = config('DB_DATABASE')
+db_usr = config('DB_UNAME')
+db_pwd = config('DB_PWD')
+
+
+# Formatted connection string for the SQL DB.
+#SQL_CONN_STR = 'DSN=' + db_server + ';Database=' + db_database + ';Trusted_Connection=no;UID=' + db_usr + ';PWD=' + db_pwd + ';'
+SQL_CONN_STR = "DRIVER={0};SERVER={1};Database={2};UID={3};PWD={4};".format(db_driver, db_server, db_database, db_usr, db_pwd)
 
 # Flask web server
 app = Flask(__name__)
-
-app.config['BASIC_AUTH_USERNAME'] = postCreds['UNAME']
-app.config['BASIC_AUTH_PASSWORD'] = postCreds['PWD']
-
+app.config['BASIC_AUTH_USERNAME'] = post_uname
+app.config['BASIC_AUTH_PASSWORD'] = post_pwd
 app.config['BASIC_AUTH_FORCE'] = True
-
 basic_auth = BasicAuth(app)
 
 
@@ -284,7 +283,7 @@ def webhook():
 	sensorMessages = json_normalize(sensorMessages)
 
 	# Remove the trailing values present in the rawData field of some sensors
-	sensorMessages = rmTrailingValues(sensorMessages, sensorTypes)
+	sensorMessages = rmTrailingValues(sensorMessages, sensor_types)
 	# Process any sensor messages for Air Quality
 	sensorMessages = aqProcessing(sensorMessages)
 	# Filter out messages from networks not related to MOVE
@@ -483,4 +482,4 @@ def webhook():
 
 if __name__ == '__main__':
 	WSGIRequestHandler.protocol_version = "HTTP/1.1"
-	app.run(host= '0.0.0.0', port = '80')
+	app.run(host= '0.0.0.0', port= 80)

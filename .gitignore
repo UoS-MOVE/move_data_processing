@@ -1,10 +1,7 @@
 __pycache__
-.venv
-.sensSqlVenv
-.hookVenv
 .vscode
-.dbCreds
-/data/
-/config/*.json
-/config/*.txt
-/testing/
+.venv
+
+.env
+data
+testing
