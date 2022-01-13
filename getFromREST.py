@@ -25,7 +25,7 @@ with open("./config/.monnitAccessToken.json") as f:
 MONNIT_ACCESS_TOKEN = accessToken['TOKEN']
 MONNIT_NETWORK_ID = "networkID=58947"
 FROM_DATE = "2019/09/03"
-TO_DATE = "2020/11/19"
+TO_DATE = "2022/01/13"
 
 DATE_FORMAT = "%Y/%m/%d"
 
@@ -63,5 +63,7 @@ while start < end:
 	for i, data in sensorData.iterrows():
 		TimestampUtc = re.split('\(|\)', data.messageDate)[1][:10]
 		sensorData.messageDate.iat[i] = datetime.fromtimestamp(int(TimestampUtc))
-
-	csvDump("dataRange_" + str(FROM_DATE.replace("/", "-")) + '_' + str(TO_DATE.replace("/", "-")), sensorData)
+	if sensorData.empty:
+		print('Response Empty, Skipping...')
+	else:
+		csvDump("dataRange_" + str(FROM_DATE.replace("/", "-")) + '_' + str(TO_DATE.replace("/", "-")), sensorData)
