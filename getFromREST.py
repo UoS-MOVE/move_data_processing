@@ -12,22 +12,23 @@ from pandas import json_normalize
 from datetime import datetime, timedelta
 import requests
 import re
-from app import csvDump
+#from app import csvDump
 import json
+import os
+from move_functions.functions import csvDump
+from decouple import config
 
 # Variable Declarations
-MONNIT_URL = "https://www.imonnit.com/json/"
-MONNIT_ENDPOINT = "AccountDataMessages/"
+MONNIT_URL = config('MONNIT_API_URL')
+MONNIT_ENDPOINT = config('MONNIT_API_URL_ENDPOINT')
+MONNIT_ACCESS_TOKEN = config('MONNIT_API_TOKEN_OLD')
+MONNIT_NETWORK_ID = config('networkID')
 
-#POST credentials info
-with open("./config/.monnitAccessToken.json") as f:
-	accessToken = json.load(f)
-MONNIT_ACCESS_TOKEN = accessToken['TOKEN']
-MONNIT_NETWORK_ID = "networkID=58947"
 FROM_DATE = "2019/09/03"
 TO_DATE = "2022/01/13"
 
 DATE_FORMAT = "%Y/%m/%d"
+
 
 # Main
 start = datetime.strptime(FROM_DATE, DATE_FORMAT).date()
