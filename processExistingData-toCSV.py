@@ -10,109 +10,59 @@
 
 
 # Import libraries
-#import sys
 import json
 import pandas as pd
 import numpy as np
 import os
-#import traceback
-#import datetime
-
+from decouple import config, Csv
 import re
-
-#import pyodbc
-
 from uuid import UUID
 
-# Import the main webhook file so its functions can be used. 
-import app
-from app import dbConnect, split_dataframe_rows, rmTrailingValues, filterNetwork, aqProcessing
+from move_functions.functions import rmTrailingValues, aqProcessing, filterNetwork, split_dataframe_rows, sortSensors, pivotTable, toXLSX
+from move_functions.db import dbConnect, execProcedureNoReturn
 
 
-# Variables
 # Open file containing the sensor types to look for
-with open('./config/sensorTypes.txt') as f:
-    sensorTypes = f.read().splitlines()
+#sensor_types = config('MONNIT_SENSOR_TYPES', cast=Csv())
+SENSOR_TYPES = config('MONNIT_SENSOR_TYPES', cast=lambda v: [s.strip() for s in v.split(',')])
+SENSOR_COLUMNS = config('MONNIT_SENSOR_COLUMNS', cast=lambda v: [s.strip() for s in v.split(',')])
+DELIMETERS = config('MONNIT_DELIMETERS', cast=lambda v: [s.strip() for s in v.split('*')])
 
-# SQL Server connection info
-with open("./config/.dbCreds.json") as f:
-	dbCreds = json.load(f)
+
+#SQL Server connection info
+db_driver = config('DB_DRIVER')
+db_server = config('AZURE_DB_SERVER')
+db_database = config('AZURE_DB_DATABASE')
+db_usr = config('AZURE_DB_USR')
+db_pwd = config('AZURE_DB_PWD')
+
+METHOD = config('GET_METHOD', default=None)
+
 
 # Formatted connection string for the SQL DB.
-SQL_CONN_STR = 'DSN='+dbCreds['SERVER']+';Database='+dbCreds['DATABASE']+';Trusted_Connection=no;UID='+dbCreds['UNAME']+';PWD='+dbCreds['PWD']+';'
+SQL_CONN_STR = "DRIVER={0};SERVER={1};Database={2};UID={3};PWD={4};".format(db_driver, db_server, db_database, db_usr, db_pwd)
 
 # Directory to save CSV and XLSX files to.
 CSV_DIR = os.getcwd() + '/data/csv/'
 XLSX_DIR = os.getcwd() + '/data/xlsx/'
 
-XLSX_NAME = XLSX_DIR + 'sensorDataSplitPivot.xlsx'
+XLSX_NAME = XLSX_DIR + 'sensorDataSplitPivot_Full.xlsx'
 
 
 pivotValues = ['rawData', 'dataValue', 'plotValues']
 pivotIndex = ['messageDate']
 pivotColumns = ['dataType', 'plotLabels', 'sensorName']
-#pivotColumns = ['dataType', 'plotLabels']
-
-
-# Functions
-
-# Split the data by sensor ID and export the data to separate CSV 
-# 	files and an XLSX file with separate worksheets per sensor
-def sortSensors(df, col):
-	print('Sorting and cleaning sensors')
-	# Sort the values in the dataframe by their sensor ID
-	df.sort_values(by = [col], inplace = True)
-	# Set the DF index to the sensor IDs
-	df.set_index(keys = [col], drop = False, inplace = True)
-	# Remove existing index names
-	df.index.name = None
-	return df
-
-# Pivot passed in DF to make analysis easier. 
-# 'values', 'index', and 'columns', are all lists of variables
-def pivotTable(df, values, index, columns, aggFunc):
-	print('Pivoting data...')
-	#df = pd.pivot_table(df, values=['rawData', 'dataValue', 'plotValues'], index=['sensorID'], columns=['dataType', 'plotLabels'], aggfunc=np.sum)
-	df = pd.pivot_table(df, values=values, index=index, columns=columns, aggfunc=aggFunc)
-	return df 
-
-# Export passed in DF to XLSX files
-def toXLSX(df, pName, fileName):
-	print('Exporting Sensor data to XLSX...')
-
-	# Strip any invalid characters from the sheet name
-	''.join(e for e in str(pName) if e.isalnum())
-	
-	# Check if file already exists, if it does then append otherwise create it
-	if os.path.exists(XLSX_NAME):
-		print('XLSX file exists, appending...')
-		with pd.ExcelWriter(fileName, engine="openpyxl", mode='a') as writer: # pylint: disable=abstract-class-instantiated
-			# Export the data to a single XLSX file with a worksheet per sensor
-			df.to_excel(writer, sheet_name = str(pName))
-	else:
-		print('File does not exist, creating...')
-		with pd.ExcelWriter(fileName, engine="openpyxl") as writer: # pylint: disable=abstract-class-instantiated
-			# Export the data to a single XLSX file with a worksheet per sensor 
-			df.to_excel(writer, sheet_name = str(pName))
-
-# Export the data to separate CSV files
-def toCSV(df, sensorID):
-	print('Exporting Sensor data to CSV')
-	p = os.path.join(CSV_DIR, "sensor_{}.csv".format(sensorID))
-	df.to_csv(p, index=False)
 
 
 # Main Body
-METHOD = ""
-#METHOD = "CSV"
 if (METHOD == "CSV"):
 	print('Getting data from CSV')
-	oldData = pd.read_csv(os.getcwd() + "/data/get/SensorData.csv")
+	oldData = pd.read_csv(os.getcwd() + "/data/csv/iMonnit_Complete.csv")
 
 	# JOIN SENSOR NAMES HERE
-	sNames = pd.read_csv(os.getcwd() + "/data/get/sensorNames.csv")
+	#sNames = pd.read_csv(os.getcwd() + "/data/get/sensorNames.csv")
 
-	oldData = oldData.join(sNames.set_index('sensorID'), on = "sensorID")
+	#oldData = oldData.join(sNames.set_index('sensorID'), on = "sensorID")
 
 else:
 	# Create a new DB object
@@ -120,25 +70,22 @@ else:
 	# Create a new cursor from established DB connection
 	cursor = conn.cursor()
 	# Select all the data stored in the old DB form
-	#SQL = "SELECT TOP(2000) * FROM salfordMove.dbo.sensorData"
 	SQL = "SELECT * FROM salfordMove.dbo.sensorData"
 
 	print('Getting data from DB')
 	oldData = pd.read_sql(SQL,conn)
 
 
+oldData.dropna(subset=['sensorName', 'rawData'], inplace=True)
+
 print('Pre-processing AQ Sensor Data')
 oldData = aqProcessing(oldData)
 print('Removing trailing integers')
-oldData = rmTrailingValues(oldData, sensorTypes)
+oldData = rmTrailingValues(oldData, SENSOR_TYPES)
 
-# Delimeters used in the recieved data
-delimeters = "%2c","|","%7c", ","
-# The columns that need to be split to remove concatonated values
-sensorColumns = ["rawData", "dataValue", "dataType", "plotValues", "plotLabels"]
 # Split the dataframe to move concatonated values to new rows
 print('Splitting DataFrame')
-splitDf = split_dataframe_rows(oldData, sensorColumns, delimeters)
+splitDf = split_dataframe_rows(oldData, SENSOR_COLUMNS, DELIMETERS)
 
 if 'pendingChanges' in splitDf.columns:
 	# Use the Pandas 'loc' function to find and replace pending changes in the dataset
@@ -159,7 +106,7 @@ filteredDF = sortSensors(filteredDF, 'sensorID')
 # Split the dataframe into separate dataframes by sensorID
 for i, x in filteredDF.groupby('sensorID'):
 	# Export the un-pivoted data
-	with pd.ExcelWriter(XLSX_DIR + 'sensorData.xlsx', engine="openpyxl") as writer: # pylint: disable=abstract-class-instantiated
+	with pd.ExcelWriter(XLSX_DIR + 'sensorData_full.xlsx', engine="openpyxl") as writer: # pylint: disable=abstract-class-instantiated
 		# Export the data to a single XLSX file with a worksheet per sensor 
 		x.to_excel(writer, sheet_name = str(i))
 	
